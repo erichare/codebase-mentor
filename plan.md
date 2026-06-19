@@ -47,7 +47,7 @@ Write the Bob skill file that any IBM team installs once. It contains the reason
 
 ## Sub-Task 2 — Template and Authoring Guide
 
-**Status:** `[ ] pending`
+**Status:** `[x] done`
 
 ### Intent
 Write the `ONBOARDING.md` template and a companion authoring guide that any IBM team can use to produce their own ONBOARDING.md in 2–4 hours. The template uses symbol anchors (method names, class names) not line numbers, so it resists drift with routine edits. The authoring guide explains each section and gives examples drawn from the Data API.
@@ -168,8 +168,8 @@ Replace the minimal README.md with a submission-quality README that serves as bo
 | File | Sub-Task | Status |
 |---|---|---|
 | `skill/SKILL.md` | 1 | `[x] done` |
-| `template/ONBOARDING.md` | 2 | `[ ] pending` |
-| `template/AUTHORING_GUIDE.md` | 2 | `[ ] pending` |
+| `template/ONBOARDING.md` | 2 | `[x] done` |
+| `template/AUTHORING_GUIDE.md` | 2 | `[x] done` |
 | `data-api/ONBOARDING.md` | 3 | `[ ] pending` |
 | `evaluation/SCORECARD.md` | 4 | `[ ] pending` |
 | `README.md` | 5 | `[ ] pending` |
