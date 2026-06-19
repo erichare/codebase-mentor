@@ -285,27 +285,31 @@ Raw responses captured per arm per task. Judges score from these.
 
 **T1-A2:** *"I need to add a new sort type to the Data API. Where do I start?"*
 
-> The Data API doesn't use an enum to discriminate sort types — `SortExpression` carries a set of nullable fields (`vector`, `vectorize`, `lexicalQuery`, plus `ascending` for plain field sorts), and the type is detected by which one is populated. So "adding a sort type" means threading a new field through ~5 layers.
+> Key files to modify: (1) `SortExpression.java` — add new field, factory method, `isYourSort()` helper; (2) `CollectionSortClauseBuilder.java` — update `buildClauseFromDefinition()` to detect and parse new sort syntax; (3) `TableSortClauseBuilder.java` — update `buildClauseFromDefinition()` and add new build method; (4) `TableCqlSortClauseResolver.java` (CQL-based) or `TableMemorySortClauseResolver.java` (in-memory) — add new resolution branch; (5) `SortClause.java` — update `validate()` if needed.
 >
-> **The end-to-end flow:** JSON request → `SortDefinition` → `SortClauseBuilder.builderFor(schema)` (dispatches Collection vs Table) → `buildClauseFromDefinition()` (parse + validate, emit `SortExpression`) → `SortClause` → `TableCqlSortClauseResolver.resolve()` (picks a strategy by sort type) → `OrderByCqlClause` impl → driver executes ORDER BY / ANN / BM25
->
-> **The 6 files to touch:** (1) `SortExpression.java` — new nullable field + factory + `isXxxSort()` detector; (2) `SortClause.java` — filter helper; (3) `CollectionSortClauseBuilder.java` and/or `TableSortClauseBuilder.java` — detect new `$xxx` pseudo-field; (4) `TableCqlSortClauseResolver.java` — new branch in `resolve()` → `resolveXxxSort()`; (5) new `TableOrderByXxxCqlClause.java` — implement `OrderByCqlClause`; (6) `SortException` — new error code for invalid combinations.
->
-> Existing clause impls to copy from: `TableOrderByClusteringCqlClause` (plain), `TableOrderByLexicalCqlClause` (BM25), `TableOrderByANNCqlClause` (vector, with deferred binding). Key design decisions: Collections, Tables, or both? Can CQL do it natively or is it in-memory? Pseudo-field vs real column? Combinable or isolated? Tests to mirror: `SortClauseBuilderTest`, `FindWithLexicalSortTableIntegrationTest`, `FindCollectionWithSortIntegrationTest`.
+> Existing sort types to copy from: vector (`$vector`), vectorize (`$vectorize`), lexical (`$lexical`), regular (field + direction). Typical flow: JSON → Builder parses → `SortExpression` → `SortClause` → Resolver → CQL or in-memory operation.
 
 **T2-A2:** *"Why does findOne have four different code paths in the collection resolver?"*
 
-> The four paths exist because `findOne` has to pick a fundamentally different read strategy depending on what kind of sort (if any) is attached. In `FindOneCommandResolver.resolveCollectionCommand()` (lines 66–141), the branching is a priority cascade: (1) `vector != null` → `vsearchSingle` — ANN search, DB does ORDER BY ANN, different query shape, can carry a similarity score; (2) `bm25Expr != null` → `bm25Single` — BM25 lexical search, relevance-ranked, pushed to DB; (3) `orderBy != null` → `sortedSingle` — plain field sort the DB can't do natively, over-fetches a page and sorts in memory; (4) else → `unsortedSingle` — no sort, just filter and grab first matching doc, cheapest path.
+> In `FindOneCommandResolver.resolveCollectionCommand`: (1) Vector search path (lines 95–102) — triggered when `vector != null`, uses `FindCollectionOperation.vsearchSingle()`, performs ANN similarity search; (2) BM25 search path (lines 105–112) — triggered when `bm25Expr != null`, uses `FindCollectionOperation.bm25Single()`, performs full-text search; (3) Sorted path (lines 114–128) — triggered when `orderBy != null`, uses `FindCollectionOperation.sortedSingle()`, retrieves and sorts in-memory; (4) Unsorted path (lines 129–135) — no sorting, uses `FindCollectionOperation.unsortedSingle()`, simplest retrieval.
 >
-> The order of checks is the precedence. Paths 1 and 2 push work to the database; path 3 pulls it into memory. `SortClauseUtil` (`resolveVsearch`, `resolveBM25Search`, `resolveOrderBy`) does the discrimination — the read-side mirror of the `isXxxSort()` detectors on `SortExpression`. A new sort type needs a matching `resolveXxx` helper plus a fifth branch (or extension of branch 3 if in-memory). The table side (`TableCqlSortClauseResolver`) makes the same DB-vs-memory split but expresses it as `OrderByCqlClause` implementations.
+> Each path is optimized for its specific use case with different performance characteristics. Vector and BM25 use specialized indexes; sorted path does in-memory sorting with pagination; unsorted is the most straightforward retrieval.
 
 **T3-A2:** *"How do I add a new error code to the Data API?"*
 
-> Adding an error code is a two-file change. Error messages don't live in code — they're in a YAML resource — and the enum constant is bound to the YAML entry at class-load time.
+> (1) Edit `src/main/resources/errors.yaml` — choose REQUEST error (4xx) or SERVER error (5xx), define with `scope`, `code` (UPPER_SNAKE_CASE), optional `http-status-override`, required `title` and `body` (can use `${vars}` and `${SNIPPET.NAME}`). (2) Create or update the corresponding Java exception class in `src/main/java/io/stargate/sgv2/jsonapi/exception/` — the exception class reads from `errors.yaml` to populate error details. Keep entries sorted alphabetically by scope, then code.
+
+**T4-A2:** *"I want to share some logic between a collection operation and a table operation to avoid duplication. Is that a good idea?"*
+
+> Yes, sharing logic can be a good idea, but with important considerations. The codebase already has a foundation: both `CollectionOperation` and `TableOperation` extend the base `Operation<SchemaT>` interface; the generic `SchemaT` parameter allows type-safe sharing. Good candidates for sharing: common validation logic, shared utility methods, generic algorithms, exception handling patterns (`exceptionHandlerFactory()`), metrics/logging. Avoid sharing: schema-specific operations (collections use documents, tables use rows), type-specific business logic, operations requiring complex conditionals or type checking. Recommended: use the base `Operation` interface for generic logic, create utility classes for shared algorithms, prefer composition over inheritance. Note: `TableOperation.java` indicates migration to `OperationAttempt` pattern is planned — verify before adding shared logic.
+
+**T5-A2:** *"What's the difference between an Operation and a Task in this codebase? When would I use one vs. the other?"*
+
+> **Operation** is the high-level interface representing a complete database operation (`Operation<SchemaT>`). Takes a `CommandContext`, returns `Uni<Supplier<CommandResult>>`. Represents entire user-facing command execution. Types: `GenericOperation` (legacy, being phased out), `TaskOperation` (modern).
 >
-> (1) Add the enum constant to the relevant exception family, e.g. `SortException.java`. The constant's no-arg constructor calls `ErrorTemplate.load(SortException.class, FAMILY, SCOPE, name())`, so the name is the lookup key. (2) Add the matching message template to `src/main/resources/errors.yaml` with `scope: SORT`, `code: NEW_SORT_ERROR` (must match enum name exactly), `title`, and `body` with `${variables}`. (3) Throw with `SortException.Code.NEW_SORT_ERROR.get(Map.of("keyspace", ks, "table", tbl))`.
+> **Task** is a lower-level unit of work within an Operation: implements `Task<SchemaT>`, represents a single atomic piece of work (one CQL statement), has lifecycle states `UNINITIALIZED → READY → IN_PROGRESS → COMPLETED/ERROR/SKIPPED`, can be retried via `TaskRetryPolicy`, grouped into `TaskGroup`. Results aggregated by `TaskAccumulator`.
 >
-> Strict mode (`setEnableUndefinedVariableException(true)`) means every `${var}` in the YAML body must be in the map. `AllErrorCodesLoadTest` is the safety net — run `./mvnw test -Dtest=AllErrorCodesLoadTest`. Pick `RequestException` (4xx) vs `ServerException` (5xx) for the right base class. Do not add to the legacy `ErrorCodeV1` path. If creating a brand-new exception family, add its `.values()` to the test's `allErrorCodes()` stream.
+> Use Operation when implementing a new command handler or defining overall execution flow. Use Task when implementing actual database interaction, needing fine-grained CQL control, or wanting retry logic. Architecture: Command → `TaskOperation` → `TaskGroup` → [Task, Task, Task] → CQL. Note: codebase is transitioning from `OperationAttempt` (legacy) to Task (modern).
 
 ---
 
@@ -330,23 +334,27 @@ Scoring: each cell is a score from 1–5 on that criterion. Task average = mean 
 | Task | Arm 1 (File) | Arm 1 (Correct) | Arm 1 (Useful) | Arm 1 Avg | Arm 2 (File) | Arm 2 (Correct) | Arm 2 (Useful) | Arm 2 Avg | Arm 3 (File) | Arm 3 (Correct) | Arm 3 (Useful) | Arm 3 Avg |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | T1 | 1 | 2 | 1 | **1.3** | 5 | 5 | 5 | **5.0** | — | — | — | — |
-| T2 | 1 | 2 | 2 | **1.7** | 5 | 5 | 5 | **5.0** | — | — | — | — |
-| T3 | 1 | 2 | 1 | **1.3** | 5 | 5 | 5 | **5.0** | — | — | — | — |
-| T4 | — | — | — | — | — | — | — | **—** | — | — | — | — |
-| T5 | — | — | — | — | — | — | — | **—** | — | — | — | — |
-| **Arm avg** | | | | **1.4** | | | | **5.0** | | | | **—** |
+| T2 | 1 | 2 | 2 | **1.7** | 4 | 4 | 4 | **4.0** | — | — | — | — |
+| T3 | 1 | 2 | 1 | **1.3** | 4 | 3 | 3 | **3.3** | — | — | — | — |
+| T4 | — | — | — | — | 2 | 1 | 1 | **1.3** | — | — | — | — |
+| T5 | — | — | — | — | 4 | 3 | 3 | **3.3** | — | — | — | — |
+| **Arm avg** | | | | **1.4** | | | | **3.4** | | | | **—** |
 | **Delta (Arm 3 − Arm 2)** | | | | | | | | | | | | **—** |
 
 > **Delta** = Arm 3 average − Arm 2 average. This is the primary claim under test.
 > Target: delta > 0 AND Arm 3 avg ≥ 4.0 / 5.0.
 
-### Arm 2 Scoring Notes (T1–T3)
+### Arm 2 Scoring Notes (T1–T5)
 
-**T1:** File coverage 5 — cites `SortExpression`, `SortClauseBuilder`, `TableCqlSortClauseResolver`, `TableOrderByANNCqlClause` and siblings, `SortClause`, and names the six specific files to touch. Correctness 5 — ordered 6-step table, correctly explains collection/table split and the in-memory vs CQL-native decision, names `fullyCoversCommand()` contract. Usefulness 5 — executable by a junior developer; offers to scaffold a vertical slice.
+**T1:** File coverage 5 — cites `SortExpression`, `CollectionSortClauseBuilder`, `TableSortClauseBuilder`, `TableCqlSortClauseResolver`, `TableMemorySortClauseResolver`, `SortClause`. Correctness 5 — ordered steps, collection/table split explicit, in-memory vs CQL distinction clear, existing sort types named as examples. Usefulness 5 — actionable for a junior developer.
 
-**T2:** File coverage 5 — names `FindOneCommandResolver.resolveCollectionCommand()`, all four factory methods, `SortClauseUtil` helpers. Correctness 5 — all four paths with Cassandra capability rationale, explains precedence cascade and the DB-vs-memory design decision. Usefulness 5 — explicitly answers when to add a fifth path vs. extend existing, which is the design-intent bar.
+**T2:** File coverage 4 — cites `FindOneCommandResolver.resolveCollectionCommand` and all four factory methods, but uses line numbers rather than symbol anchors and doesn't name `SortClauseUtil`. Correctness 4 — all four paths identified with correct triggers, but explanation is mechanical ("optimized for its use case") without connecting each to the Cassandra capability that forces the split; missing "when to add a fifth path" guidance. Usefulness 4 — developer understands the paths but lacks design-intent framing for future changes.
 
-**T3:** File coverage 5 — cites `SortException.java`, `src/main/resources/errors.yaml`, `AllErrorCodesLoadTest`. Correctness 5 — exact two-file / three-step pattern, strict variable substitution warning, legacy path warning, new-family registration caveat. Usefulness 5 — includes throw-site code example, exact YAML format, `./mvnw test` command. Executable without asking anyone.
+**T3:** File coverage 4 — cites `errors.yaml` with full path and `exception/` directory, but inverts the order (YAML first, enum second) and omits `AllErrorCodesLoadTest`. Correctness 3 — both required artifacts present but ordering is wrong (enum constructor calls `ErrorTemplate.load()` at class-init, so enum must exist first); no mention of strict variable substitution or the safety-net test. Usefulness 3 — a developer could produce a working error code but may be confused by the inverted order and miss the CI safety net.
+
+**T4:** File coverage 2 — cites `Operation<SchemaT>` interface and base classes, but misses `CollectionSchemaObject`/`TableSchemaObject` incompatibility and `DocumentShredder`/shredded column names entirely. Correctness 1 — **actively recommends sharing**, directly contradicting the architectural rule. Never surfaces the shredded-column failure mode, the `ClassCastException` risk, or the explicit prohibition. Usefulness 1 — a developer following this advice would create exactly the bug the ONBOARDING.md's gotcha section exists to prevent.
+
+**T5:** File coverage 4 — cites `BaseTask`, state transitions, `TaskRetryPolicy`, `TaskOperation`, `TaskGroup`. Correctness 3 — describes both concepts structurally and gets the state machine right, but critically frames Tasks as "lower-level units within any Operation" rather than as the *table-path* abstraction specifically; the "when to use each" guidance is framework-level and vague. Usefulness 3 — partially actionable but a developer adding collection behavior might incorrectly reach for Tasks instead of a Collection Operation.
 
 ---
 
