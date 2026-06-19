@@ -184,43 +184,74 @@ Award 1–2 if the answer is too abstract to execute.
 
 ---
 
-### T4 — Judge-Selected (held out)
+### T4 — Design Intent / Cross-Cutting Invariant
 
 **Question:**
-> Judge-selected after `data-api/ONBOARDING.md` is committed and frozen. Topic must **not** be covered by a specific change recipe in the doc.
+> "I want to share some logic between a collection operation and a table operation to avoid duplication. Is that a good idea?"
 
-**What this task tests:**  
-T4 tests whether the ONBOARDING.md's general orientation — the layer vocabulary, the high-signal file map, the domain glossary — transfers to questions the doc did not explicitly answer. A strong arm (3) score here means the map generalises; a weak score means the doc only helps with recipe-covered tasks. Judges should choose a question that requires a developer to navigate to the right layer from first principles using the doc's vocabulary, rather than following a step-by-step recipe.
+**What this task tests:**
+T4 probes whether Bob can surface the *why* behind a cross-cutting architectural rule — not just that the two packages are separate (findable from source) but the specific reason (shredded-column schema vs CQL columns) and the concrete failure mode (`ClassCastException` from passing the wrong `SchemaObject`). The ONBOARDING.md gotcha section contains this explicitly; source alone requires reading multiple files and inferring the design intent.
 
 #### Per-Criterion Judging Notes
 
-To be determined by judges at the time of question selection. Judges should define expected file citations, the correct answer, and the minimum bar for usefulness before scoring any arm.
+**File Coverage**
+Award 4–5 if Bob cites:
+- The two separate packages: `service/operation/collections/` and `service/operation/tables/`
+- `CollectionSchemaObject` and `TableSchemaObject` as the incompatible types that make sharing dangerous
+- `DocumentShredder` or the shredded column names (`doc_json`, `exist_keys`, `array_size`) as evidence of why collections can't share table code
 
-| Criterion | Score | Notes |
-|-----------|-------|-------|
-| File coverage | — | TBD by judges |
-| Correctness | — | TBD by judges |
-| Usefulness | — | TBD by judges |
+Award 3 if Bob identifies the packages are separate but doesn't reach the schema incompatibility.
+Award 1–2 if Bob recommends sharing without surfacing the risk.
+
+**Correctness**
+Award 4–5 if the answer:
+1. States the rule clearly: do not share concrete operation classes across the two paths
+2. Explains *why*: collections use a shredded denormalized schema with fixed Cassandra columns; tables map one-to-one to CQL columns — the `SchemaObject` types are incompatible
+3. Names the concrete failure mode: a `ClassCastException` when the wrong `SchemaObject` is passed, or silent no-op because shredded columns don't exist in the table
+
+Award 3 if the answer recommends against sharing but only gives a vague "the paths are different" reason.
+Award 1–2 if the answer recommends sharing or gets the failure mode wrong.
+
+**Usefulness**
+Award 4–5 if a developer reading the answer would know definitively not to share logic and understand exactly what would break if they tried.
+Award 3 if the answer discourages sharing but leaves the developer uncertain about what exactly would fail.
+Award 1–2 if the answer is inconclusive or wrong.
 
 ---
 
-### T5 — Judge-Selected (held out)
+### T5 — Vocabulary / Orientation
 
 **Question:**
-> Judge-selected after `data-api/ONBOARDING.md` is committed and frozen. Topic must be **different in layer** from T4 (if T4 tests the command layer, T5 should test the task/retry layer or the shredding layer, for example).
+> "What's the difference between an Operation and a Task in this codebase? When would I use one vs. the other?"
 
-**What this task tests:**  
-T5 is a second held-out transfer task, chosen to cover a different part of the codebase from T4. This guards against the arm (3) advantage being confined to one layer of the doc. If arm (3) beats arm (2) on both T4 and T5, the map's orientation benefit is broad; if only on one, the submission reports that the benefit is layer-specific.
+**What this task tests:**
+T5 probes vocabulary disambiguation — a question that requires understanding the design intent behind two similar-sounding concepts. Source shows both classes exist and their structure, but the clean answer (Operation = collection path one-shot unit of work; Task = table path with explicit state machine and retry loop) requires either reading many files or having the domain vocabulary section of the ONBOARDING.md. A developer who gets this wrong will put new code in the wrong layer.
 
 #### Per-Criterion Judging Notes
 
-To be determined by judges at the time of question selection. As with T4, judges must define the expected citations, correct answer, and usefulness bar before running any arm.
+**File Coverage**
+Award 4–5 if Bob cites:
+- `FindCollectionOperation` or `InsertCollectionOperation` as the canonical Operation example (collection path)
+- `BaseTask` and its state transition enum (`UNINITIALIZED → READY → RUNNING → COMPLETED/ERROR`)
+- `TaskRetryPolicy` as the retry mechanism attached to Tasks
+- The package split: `service/operation/collections/` (Operations) vs. `service/operation/tasks/` or `service/operation/tables/` (Tasks)
 
-| Criterion | Score | Notes |
-|-----------|-------|-------|
-| File coverage | — | TBD by judges |
-| Correctness | — | TBD by judges |
-| Usefulness | — | TBD by judges |
+Award 3 if Bob finds both `BaseTask` and an Operation class but doesn't articulate the collection/table alignment.
+Award 1–2 if Bob conflates the two or gives a purely structural description with no guidance on when to use each.
+
+**Correctness**
+Award 4–5 if the answer correctly states:
+1. Operations are the collection-path abstraction: one-shot, build-and-execute CQL, return a `CommandResult`
+2. Tasks are the table-path abstraction: explicit state machine (`UNINITIALIZED → READY → RUNNING → COMPLETED/ERROR`), managed retry via `TaskRetryPolicy`, used when the operation needs multiple steps or conditional retry behavior
+3. When to use which: adding collection behavior → extend or add an `Operation`; adding table behavior → implement a `DBTask` and build it from a `TaskBuilder`
+
+Award 3 if the answer distinguishes the two but misses the state machine or retry dimension.
+Award 1–2 if the answer treats them as interchangeable or describes only structural differences without guidance.
+
+**Usefulness**
+Award 4–5 if a developer new to the codebase would know exactly which abstraction to reach for when adding new behavior, and why.
+Award 3 if the answer gives a correct but incomplete picture that would require follow-up.
+Award 1–2 if the answer would leave a developer unsure which to use.
 
 ---
 
@@ -301,8 +332,8 @@ Scoring: each cell is a score from 1–5 on that criterion. Task average = mean 
 | T1 | 1 | 2 | 1 | **1.3** | 5 | 5 | 5 | **5.0** | — | — | — | — |
 | T2 | 1 | 2 | 2 | **1.7** | 5 | 5 | 5 | **5.0** | — | — | — | — |
 | T3 | 1 | 2 | 1 | **1.3** | 5 | 5 | 5 | **5.0** | — | — | — | — |
-| T4 | — | — | — | — | — | — | — | — | — | — | — | — |
-| T5 | — | — | — | — | — | — | — | — | — | — | — | — |
+| T4 | — | — | — | — | — | — | — | **—** | — | — | — | — |
+| T5 | — | — | — | — | — | — | — | **—** | — | — | — | — |
 | **Arm avg** | | | | **1.4** | | | | **5.0** | | | | **—** |
 | **Delta (Arm 3 − Arm 2)** | | | | | | | | | | | | **—** |
 
