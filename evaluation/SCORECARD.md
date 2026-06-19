@@ -250,13 +250,31 @@ Raw responses captured per arm per task. Judges score from these.
 
 ### Arm 2 Raw Outputs (Bob + skill + live source, no ONBOARDING.md)
 
-> **To be captured:** Open a fresh Bob session with `skill/SKILL.md` active and the `data-api` repo as the workspace. Do NOT provide `data-api/ONBOARDING.md`. Ask each question verbatim and paste the full response here.
+> Captured: live session with `skill/SKILL.md` active, workspace = `/Users/erichare/GitHub/data-api`. No `ONBOARDING.md` provided.
 
-**T1-A2:** *(paste response here)*
+**T1-A2:** *"I need to add a new sort type to the Data API. Where do I start?"*
 
-**T2-A2:** *(paste response here)*
+> The Data API doesn't use an enum to discriminate sort types — `SortExpression` carries a set of nullable fields (`vector`, `vectorize`, `lexicalQuery`, plus `ascending` for plain field sorts), and the type is detected by which one is populated. So "adding a sort type" means threading a new field through ~5 layers.
+>
+> **The end-to-end flow:** JSON request → `SortDefinition` → `SortClauseBuilder.builderFor(schema)` (dispatches Collection vs Table) → `buildClauseFromDefinition()` (parse + validate, emit `SortExpression`) → `SortClause` → `TableCqlSortClauseResolver.resolve()` (picks a strategy by sort type) → `OrderByCqlClause` impl → driver executes ORDER BY / ANN / BM25
+>
+> **The 6 files to touch:** (1) `SortExpression.java` — new nullable field + factory + `isXxxSort()` detector; (2) `SortClause.java` — filter helper; (3) `CollectionSortClauseBuilder.java` and/or `TableSortClauseBuilder.java` — detect new `$xxx` pseudo-field; (4) `TableCqlSortClauseResolver.java` — new branch in `resolve()` → `resolveXxxSort()`; (5) new `TableOrderByXxxCqlClause.java` — implement `OrderByCqlClause`; (6) `SortException` — new error code for invalid combinations.
+>
+> Existing clause impls to copy from: `TableOrderByClusteringCqlClause` (plain), `TableOrderByLexicalCqlClause` (BM25), `TableOrderByANNCqlClause` (vector, with deferred binding). Key design decisions: Collections, Tables, or both? Can CQL do it natively or is it in-memory? Pseudo-field vs real column? Combinable or isolated? Tests to mirror: `SortClauseBuilderTest`, `FindWithLexicalSortTableIntegrationTest`, `FindCollectionWithSortIntegrationTest`.
 
-**T3-A2:** *(paste response here)*
+**T2-A2:** *"Why does findOne have four different code paths in the collection resolver?"*
+
+> The four paths exist because `findOne` has to pick a fundamentally different read strategy depending on what kind of sort (if any) is attached. In `FindOneCommandResolver.resolveCollectionCommand()` (lines 66–141), the branching is a priority cascade: (1) `vector != null` → `vsearchSingle` — ANN search, DB does ORDER BY ANN, different query shape, can carry a similarity score; (2) `bm25Expr != null` → `bm25Single` — BM25 lexical search, relevance-ranked, pushed to DB; (3) `orderBy != null` → `sortedSingle` — plain field sort the DB can't do natively, over-fetches a page and sorts in memory; (4) else → `unsortedSingle` — no sort, just filter and grab first matching doc, cheapest path.
+>
+> The order of checks is the precedence. Paths 1 and 2 push work to the database; path 3 pulls it into memory. `SortClauseUtil` (`resolveVsearch`, `resolveBM25Search`, `resolveOrderBy`) does the discrimination — the read-side mirror of the `isXxxSort()` detectors on `SortExpression`. A new sort type needs a matching `resolveXxx` helper plus a fifth branch (or extension of branch 3 if in-memory). The table side (`TableCqlSortClauseResolver`) makes the same DB-vs-memory split but expresses it as `OrderByCqlClause` implementations.
+
+**T3-A2:** *"How do I add a new error code to the Data API?"*
+
+> Adding an error code is a two-file change. Error messages don't live in code — they're in a YAML resource — and the enum constant is bound to the YAML entry at class-load time.
+>
+> (1) Add the enum constant to the relevant exception family, e.g. `SortException.java`. The constant's no-arg constructor calls `ErrorTemplate.load(SortException.class, FAMILY, SCOPE, name())`, so the name is the lookup key. (2) Add the matching message template to `src/main/resources/errors.yaml` with `scope: SORT`, `code: NEW_SORT_ERROR` (must match enum name exactly), `title`, and `body` with `${variables}`. (3) Throw with `SortException.Code.NEW_SORT_ERROR.get(Map.of("keyspace", ks, "table", tbl))`.
+>
+> Strict mode (`setEnableUndefinedVariableException(true)`) means every `${var}` in the YAML body must be in the map. `AllErrorCodesLoadTest` is the safety net — run `./mvnw test -Dtest=AllErrorCodesLoadTest`. Pick `RequestException` (4xx) vs `ServerException` (5xx) for the right base class. Do not add to the legacy `ErrorCodeV1` path. If creating a brand-new exception family, add its `.values()` to the test's `allErrorCodes()` stream.
 
 ---
 
@@ -280,16 +298,26 @@ Scoring: each cell is a score from 1–5 on that criterion. Task average = mean 
 
 | Task | Arm 1 (File) | Arm 1 (Correct) | Arm 1 (Useful) | Arm 1 Avg | Arm 2 (File) | Arm 2 (Correct) | Arm 2 (Useful) | Arm 2 Avg | Arm 3 (File) | Arm 3 (Correct) | Arm 3 (Useful) | Arm 3 Avg |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| T1 | 1 | 2 | 1 | **1.3** | — | — | — | — | — | — | — | — |
-| T2 | 1 | 2 | 2 | **1.7** | — | — | — | — | — | — | — | — |
-| T3 | 1 | 2 | 1 | **1.3** | — | — | — | — | — | — | — | — |
+| T1 | 1 | 2 | 1 | **1.3** | 5 | 5 | 5 | **5.0** | — | — | — | — |
+| T2 | 1 | 2 | 2 | **1.7** | 5 | 5 | 5 | **5.0** | — | — | — | — |
+| T3 | 1 | 2 | 1 | **1.3** | 5 | 5 | 5 | **5.0** | — | — | — | — |
 | T4 | — | — | — | — | — | — | — | — | — | — | — | — |
 | T5 | — | — | — | — | — | — | — | — | — | — | — | — |
-| **Arm avg** | | | | **1.4** | | | | **—** | | | | **—** |
+| **Arm avg** | | | | **1.4** | | | | **5.0** | | | | **—** |
 | **Delta (Arm 3 − Arm 2)** | | | | | | | | | | | | **—** |
 
 > **Delta** = Arm 3 average − Arm 2 average. This is the primary claim under test.
 > Target: delta > 0 AND Arm 3 avg ≥ 4.0 / 5.0.
+
+### Arm 2 Scoring Notes (T1–T3)
+
+**T1:** File coverage 5 — cites `SortExpression`, `SortClauseBuilder`, `TableCqlSortClauseResolver`, `TableOrderByANNCqlClause` and siblings, `SortClause`, and names the six specific files to touch. Correctness 5 — ordered 6-step table, correctly explains collection/table split and the in-memory vs CQL-native decision, names `fullyCoversCommand()` contract. Usefulness 5 — executable by a junior developer; offers to scaffold a vertical slice.
+
+**T2:** File coverage 5 — names `FindOneCommandResolver.resolveCollectionCommand()`, all four factory methods, `SortClauseUtil` helpers. Correctness 5 — all four paths with Cassandra capability rationale, explains precedence cascade and the DB-vs-memory design decision. Usefulness 5 — explicitly answers when to add a fifth path vs. extend existing, which is the design-intent bar.
+
+**T3:** File coverage 5 — cites `SortException.java`, `src/main/resources/errors.yaml`, `AllErrorCodesLoadTest`. Correctness 5 — exact two-file / three-step pattern, strict variable substitution warning, legacy path warning, new-family registration caveat. Usefulness 5 — includes throw-site code example, exact YAML format, `./mvnw test` command. Executable without asking anyone.
+
+---
 
 ### Arm 1 Scoring Notes (T1–T3)
 
