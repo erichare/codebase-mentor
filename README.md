@@ -34,7 +34,7 @@ The skill works for any IBM team. The Stargate Data API — 90+ command resolver
 | 1 — Skill authoring | `skill/SKILL.md` | 🟩 Done |
 | 2 — Template + authoring guide | `template/` | 🟩 Done |
 | 3 — Data API reference ONBOARDING.md | `data-api/ONBOARDING.md` | 🟩 Done |
-| 4 — Evaluation scorecard setup | `evaluation/SCORECARD.md` | ⬜ Pending |
+| 4 — Evaluation scorecard setup | `evaluation/SCORECARD.md` | 🟩 Done |
 | 5 — This README | `README.md` | 🟩 Done |
 
 ---
