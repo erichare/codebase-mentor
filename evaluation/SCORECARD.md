@@ -1,0 +1,303 @@
+# Evaluation Scorecard — Source-Grounded Codebase Mentor
+
+> **Scope:** Stargate Data API · **Evaluation window:** Week 2–3 of challenge period
+
+---
+
+## Preamble
+
+### Three-Arm Structure
+
+The evaluation runs every task question under three conditions:
+
+| Arm | Condition |
+|-----|-----------|
+| **Arm 1** | Generic Bob — skill not active, no source, no ONBOARDING.md |
+| **Arm 2** | Bob + codebase-mentor skill active + live source readable, **no** ONBOARDING.md provided |
+| **Arm 3** | Bob + codebase-mentor skill active + live source readable + `data-api/ONBOARDING.md` in scope |
+
+The structure matters because it isolates two distinct effects:
+
+- **Arm 1 → Arm 2 delta** measures the value of the skill's reasoning strategy (source tracing, evidence citation) independent of any authored doc.
+- **Arm 2 → Arm 3 delta** measures the incremental value of the ONBOARDING.md map — the artifact that costs 2–4 hours to author.
+
+The arm (2) → arm (3) delta is the **primary claim under test**.
+
+### Either Outcome Is Credible
+
+If arm (2) ≈ arm (3) — the ONBOARDING.md produces little or no score lift — that is a valid and publishable result. In that case, the doc's value shifts to rationale and gotchas: non-obvious design decisions, cross-cutting invariants, and negative-space rules (things Bob cannot infer from structure alone). The submission will say so explicitly.
+
+Reporting the arm (2) → arm (3) delta is what makes the claim falsifiable. **Neither outcome is pre-judged.**
+
+### Success Criteria
+
+Success is defined as:
+
+1. **Positive delta:** arm (3) average score > arm (2) average score on correctness + usefulness across T1–T5.
+2. **Absolute threshold:** arm (3) average ≥ 4.0 / 5.0 across all tasks.
+
+Both numbers are reported. The delta is the headline claim; the absolute score is the secondary check that arm (3) is genuinely useful, not merely better than a weak baseline.
+
+---
+
+## Scoring Key
+
+### Scale (1–5)
+
+| Score | Meaning |
+|-------|---------|
+| **1** | No useful signal. Answer is wrong, irrelevant, or entirely generic. |
+| **2** | Partial signal. Some correct elements but missing key facts; a developer could not act on this. |
+| **3** | Adequate. Correct overall but lacks specificity; a mid-level developer could proceed with effort. |
+| **4** | Good. Correct and specific; a junior developer could act on this with minimal follow-up. |
+| **5** | Excellent. Correct, specific, and complete; a junior developer could execute without asking anyone. |
+
+### Three Criteria per Task
+
+Each task is scored on three independent criteria. The **overall task score** is the arithmetic mean of the three.
+
+#### File Coverage
+> Did Bob cite the right source artifacts — the specific classes and methods that matter for this task?
+
+Scores 1–2: no citations, or citations to generic/wrong files.  
+Scores 3: citations to the right layer but not the specific entry points.  
+Scores 4–5: the critical classes and methods are named explicitly.
+
+#### Correctness
+> Was the answer factually accurate? Did checklists reflect the actual code path? Did explanations match source behaviour?
+
+Scores 1–2: factually wrong or directly contradicted by source.  
+Scores 3: correct in intent but missing a required step or conflating concepts.  
+Scores 4–5: all steps correct, collection/table distinctions preserved where relevant, no false claims.
+
+#### Usefulness
+> Could a junior developer act on this answer without further help?
+
+Scores 1–2: too vague or too wrong to act on.  
+Scores 3: actionable only for someone who already knows the codebase.  
+Scores 4–5: self-contained enough for a developer new to this codebase to execute.
+
+---
+
+## Tasks
+
+---
+
+### T1 — Add a New Sort Type
+
+**Question:**
+> "I need to add a new sort type to the Data API. Where do I start?"
+
+#### Per-Criterion Judging Notes
+
+**File Coverage**  
+Award 4–5 if Bob explicitly cites:
+- `SortClauseUtil` (detection / validation of sort type)
+- A `*CqlClause` class for tables (e.g. `TableOrderByANNCqlClause` or a sibling clause class)
+- `FindCollectionOperation` (sort dispatch on the collection path)
+- `FindOneCommandResolver` (entry point where sort options are resolved)
+
+Award 3 if Bob reaches the right layer (sort clause, operation layer) but names only one or two of the above.  
+Award 1–2 if Bob cites generic API framework files or no files at all.
+
+**Correctness**  
+Award 4–5 if the answer produces an ordered checklist covering all three required steps:
+1. Detect/validate the new sort type in `SortClauseUtil`
+2. Create (or extend) the appropriate `*CqlClause` class for the table path
+3. Mirror the dispatch case in `FindCollectionOperation` for the collection path
+
+Also award full marks if the answer correctly explains the **collection/table split**: collection sorts run through in-memory or index-backed dispatch in `FindCollectionOperation`; table sorts produce CQL `ORDER BY` clauses via the `*CqlClause` hierarchy.
+
+Award 3 if the checklist is present but missing the collection/table distinction or one step.  
+Award 1–2 if the answer omits the checklist or gets the split wrong.
+
+**Usefulness**  
+Award 4–5 if a junior developer reading the answer could open the correct files, understand what to add, and follow the steps without a senior-engineer walkthrough.  
+Award 3 if the answer requires the developer to already know roughly where sort handling lives.  
+Award 1–2 if the answer is too abstract to act on.
+
+---
+
+### T2 — Why Does findOne Have Four Code Paths?
+
+**Question:**
+> "Why does findOne have four different code paths in the collection resolver?"
+
+#### Per-Criterion Judging Notes
+
+**File Coverage**  
+Award 4–5 if Bob explicitly cites:
+- `FindOneCommandResolver.resolveCollectionCommand()` (the method that dispatches the four paths)
+- `FindCollectionOperation` and at least two of its four internal path identifiers: `vsearchSingle`, `bm25Single`, `sortedSingle`, `unsortedSingle`
+
+Award 3 if Bob reaches `FindOneCommandResolver` but does not name `resolveCollectionCommand()` or does not name the four path variants.  
+Award 1–2 if Bob does not reach the resolver or operation layer.
+
+**Correctness**  
+Award 4–5 if the answer correctly identifies all four paths and explains *why* each exists:
+- **vsearch** — vector ANN index is present; uses approximate nearest-neighbour search
+- **BM25** — BM25 text index is present; uses full-text search
+- **sorted** — no vector/BM25 index but a sort clause is present; requires in-memory sort
+- **unsorted** — simple read, no sort or index needed; most efficient path
+
+The explanation must connect each path to the underlying Cassandra capability (or its absence) that forced the split, not just enumerate the names.
+
+Award 3 if the answer names the paths but does not explain the Cassandra capability rationale.  
+Award 1–2 if the answer is wrong about the number of paths or conflates the split reasons.
+
+**Usefulness**  
+Award 4–5 if the answer explains the *design intent* — why Cassandra's index model forces this branching — such that a developer understands when to add a fifth path vs. modify an existing one.  
+Award 3 if the answer enumerates the paths without design-intent explanation.  
+Award 1–2 if the answer would leave a developer confused about when the split applies.
+
+---
+
+### T3 — Add a New Error Code
+
+**Question:**
+> "How do I add a new error code to the Data API?"
+
+#### Per-Criterion Judging Notes
+
+**File Coverage**  
+Award 4–5 if Bob explicitly cites:
+- The `exception/` package directory (or a concrete exception class from it, e.g. `JsonApiException`)
+- A `*Exception.Code` enum (e.g. `JsonApiException.Code`) as the place to add the new constant
+- The YAML resources directory where error message templates live (e.g. `src/main/resources/` or the `errors/` subdirectory within it)
+
+Award 3 if Bob mentions exceptions generically or finds one of the three artifacts without the others.  
+Award 1–2 if Bob suggests adding error handling in a command handler or resolver without reaching the error-code infrastructure.
+
+**Correctness**  
+Award 4–5 if the answer produces the **three-step pattern** in order:
+1. Add a new constant to the relevant `*Exception.Code` enum
+2. Add a matching YAML error-message template (with the correct key format) in the resources directory
+3. Throw the error using the `ErrorCode.get(errVars(...))` pattern at the call site
+
+Award 3 if two of the three steps are present and correctly ordered but one is missing or wrong.  
+Award 1–2 if the answer suggests a different pattern (e.g. constructing the exception directly without the enum/YAML pair) that contradicts the actual infrastructure.
+
+**Usefulness**  
+Award 4–5 if the answer includes enough detail — enum class name, YAML key format, throw-site example — that a developer can execute all three steps without asking a senior engineer.  
+Award 3 if the answer is correct in intent but requires the developer to discover the YAML format or enum location independently.  
+Award 1–2 if the answer is too abstract to execute.
+
+---
+
+### T4 — Judge-Selected (held out)
+
+**Question:**
+> Judge-selected after `data-api/ONBOARDING.md` is committed and frozen. Topic must **not** be covered by a specific change recipe in the doc.
+
+**What this task tests:**  
+T4 tests whether the ONBOARDING.md's general orientation — the layer vocabulary, the high-signal file map, the domain glossary — transfers to questions the doc did not explicitly answer. A strong arm (3) score here means the map generalises; a weak score means the doc only helps with recipe-covered tasks. Judges should choose a question that requires a developer to navigate to the right layer from first principles using the doc's vocabulary, rather than following a step-by-step recipe.
+
+#### Per-Criterion Judging Notes
+
+To be determined by judges at the time of question selection. Judges should define expected file citations, the correct answer, and the minimum bar for usefulness before scoring any arm.
+
+| Criterion | Score | Notes |
+|-----------|-------|-------|
+| File coverage | — | TBD by judges |
+| Correctness | — | TBD by judges |
+| Usefulness | — | TBD by judges |
+
+---
+
+### T5 — Judge-Selected (held out)
+
+**Question:**
+> Judge-selected after `data-api/ONBOARDING.md` is committed and frozen. Topic must be **different in layer** from T4 (if T4 tests the command layer, T5 should test the task/retry layer or the shredding layer, for example).
+
+**What this task tests:**  
+T5 is a second held-out transfer task, chosen to cover a different part of the codebase from T4. This guards against the arm (3) advantage being confined to one layer of the doc. If arm (3) beats arm (2) on both T4 and T5, the map's orientation benefit is broad; if only on one, the submission reports that the benefit is layer-specific.
+
+#### Per-Criterion Judging Notes
+
+To be determined by judges at the time of question selection. As with T4, judges must define the expected citations, correct answer, and usefulness bar before running any arm.
+
+| Criterion | Score | Notes |
+|-----------|-------|-------|
+| File coverage | — | TBD by judges |
+| Correctness | — | TBD by judges |
+| Usefulness | — | TBD by judges |
+
+---
+
+## Results Table
+
+> All cells empty — to be filled after evaluation runs.
+
+Scoring: each cell shows `file / correct / useful / avg` on the 1–5 scale.  
+Task average = mean of the three criteria. Arm average = mean of T1–T5 task averages.
+
+| Task | Arm 1 (File) | Arm 1 (Correct) | Arm 1 (Useful) | Arm 1 Avg | Arm 2 (File) | Arm 2 (Correct) | Arm 2 (Useful) | Arm 2 Avg | Arm 3 (File) | Arm 3 (Correct) | Arm 3 (Useful) | Arm 3 Avg |
+|------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| T1 | — | — | — | — | — | — | — | — | — | — | — | — |
+| T2 | — | — | — | — | — | — | — | — | — | — | — | — |
+| T3 | — | — | — | — | — | — | — | — | — | — | — | — |
+| T4 | — | — | — | — | — | — | — | — | — | — | — | — |
+| T5 | — | — | — | — | — | — | — | — | — | — | — | — |
+| **Arm avg** | | | | **—** | | | | **—** | | | | **—** |
+| **Delta (Arm 3 − Arm 2)** | | | | | | | | | | | | **—** |
+
+> **Delta** = Arm 3 average − Arm 2 average. This is the primary claim under test.  
+> Target: delta > 0 AND Arm 3 avg ≥ 4.0 / 5.0.
+
+---
+
+## How to Run
+
+### Prerequisites
+
+- Two senior Stargate Data API engineers available as independent judges
+- Bob session access
+- The codebase-mentor skill installed (see [`skill/SKILL.md`](../skill/SKILL.md))
+- Local clone of `data-api` repo (or equivalent source access from within the session)
+- `data-api/ONBOARDING.md` committed and frozen before T4/T5 questions are selected
+
+### Running Arm 1 — Generic Bob (no skill, no doc)
+
+1. Open a **fresh** Bob session with no skill active. Confirm the codebase-mentor skill is not loaded.
+2. Do not provide `data-api/ONBOARDING.md` or any codebase summary.
+3. Ask the task question verbatim (do not rephrase).
+4. Record the full response.
+5. Score independently on all three criteria using the judging notes above.
+6. Enter scores in the Arm 1 columns of the results table.
+
+### Running Arm 2 — Bob + Skill + Live Source (no ONBOARDING.md)
+
+1. Open a **fresh** Bob session.
+2. Activate the codebase-mentor skill (copy `skill/SKILL.md` to your skills directory if not already installed).
+3. **Do not** provide `data-api/ONBOARDING.md` or mention that it exists.
+4. Ensure Bob has access to the `data-api` source (local repo path or equivalent).
+5. Ask the task question verbatim.
+6. Record the full response including any source reads Bob performs.
+7. Score independently on all three criteria.
+8. Enter scores in the Arm 2 columns of the results table.
+
+### Running Arm 3 — Bob + Skill + ONBOARDING.md
+
+1. Open a **fresh** Bob session.
+2. Activate the codebase-mentor skill.
+3. Ensure `data-api/ONBOARDING.md` is accessible in the session (place it at repo root or point Bob to it explicitly).
+4. Ensure Bob has access to the `data-api` source.
+5. Ask the task question verbatim.
+6. Record the full response including any ONBOARDING.md and source reads Bob performs.
+7. Score independently on all three criteria.
+8. Enter scores in the Arm 3 columns of the results table.
+
+### Judging Protocol
+
+- **Two judges** score each response independently without seeing the other's scores.
+- After both judges complete a task-arm pair, compare scores. If any criterion differs by more than 1 point, discuss and reconcile to a single agreed score before entering it in the table.
+- Score all five tasks under one arm before moving to the next arm, to reduce contamination across conditions.
+- Do not discuss scores between judges until both have finished a given task-arm pair.
+
+### T4 and T5 Question Selection
+
+1. Both judges read `data-api/ONBOARDING.md` independently after it is committed and frozen.
+2. Each judge proposes two candidate questions: one that is **not** covered by a specific change recipe in the doc (T4 candidate), and one that targets a **different layer** of the codebase (T5 candidate).
+3. Judges agree on final T4 and T5 questions, then each defines expected file citations, the correct answer, and the minimum bar for usefulness *before* running any arm.
+4. Write the agreed questions and judging criteria into this file (replacing the placeholder rows above) before scoring begins.
+5. Run T4 and T5 under all three arms using the same protocol as T1–T3.

@@ -111,7 +111,7 @@ Author the reference ONBOARDING.md for the Stargate Data API, populated entirely
 
 ## Sub-Task 4 — Evaluation Scorecard Setup
 
-**Status:** `[ ] pending`
+**Status:** `[x] done`
 
 ### Intent
 Create the evaluation scorecard file with the three pre-specified tasks (T1–T3) fully written up, and placeholder rows for judge-selected T4–T5. The scorecard tracks all three arms (generic Bob, Bob+skill+source, Bob+skill+ONBOARDING.md) and is structured to report the arm (2)→(3) delta explicitly. This file is committed now so the structure is visible on GitHub before results are filled in.
@@ -171,5 +171,5 @@ Replace the minimal README.md with a submission-quality README that serves as bo
 | `template/ONBOARDING.md` | 2 | `[x] done` |
 | `template/AUTHORING_GUIDE.md` | 2 | `[x] done` |
 | `data-api/ONBOARDING.md` | 3 | `[x] done` |
-| `evaluation/SCORECARD.md` | 4 | `[ ] pending` |
+| `evaluation/SCORECARD.md` | 4 | `[x] done` |
 | `README.md` | 5 | `[ ] pending` |
