@@ -1,0 +1,224 @@
+# ONBOARDING.md Authoring Guide
+
+This guide walks you through each of the seven sections in `template/ONBOARDING.md`. For every section it explains what to write, how detailed to be, and gives a short worked example drawn from the Stargate Data API — a real IBM-adjacent codebase with 90+ command resolvers, a five-layer request pipeline, and no prior ONBOARDING.md.
+
+**Time budget:** most teams complete a first draft in 2–4 hours. See the break-even framing below.
+
+---
+
+## Why This Is Worth Your Time
+
+A new engineer's first real architecture question typically costs **30–60 minutes of senior-engineer interrupt time**. On most teams this happens 3–5 times per onboarding. That's 90–300 minutes of senior time per hire — just for orientation, before the new engineer has committed a single line.
+
+Writing this document takes **2–4 hours, once**. That breaks even within one to two new hires. After that it compounds: every subsequent hire, every cross-team contributor, every on-call engineer debugging something unfamiliar at midnight.
+
+The document does not replace the senior engineer. It answers the low-complexity orientation questions ("where does X live?", "what's the word for Y?") so the senior engineer is interrupted only for questions that genuinely need them.
+
+---
+
+## A Critical Rule Before You Start: Symbol Anchors, Not Line Numbers
+
+Throughout `template/ONBOARDING.md` you will see the instruction: **use symbol anchors (class names, method names), not line numbers**.
+
+**Why this matters:** line numbers rot. Every refactor, every added import, every javadoc block shifts every line number in the file. A document that says "see line 72 of `FindOneCommandResolver.java`" is wrong within weeks. A document that says "see `FindOneCommandResolver.resolveCollectionCommand()`" survives any edit that doesn't rename the method — and if the method is renamed, the rename itself is the architectural change worth updating the document for.
+
+**The rule in practice:**
+- ✅ `FindOneCommandResolver.resolveCollectionCommand()` branches across four sort paths
+- ❌ `FindOneCommandResolver.java`, line 72 branches across four sort paths
+- ✅ `SortClauseUtil` is the entry point for sort dispatch detection
+- ❌ `service/resolver/query/collection/find/FindOneCommandResolver.java`
+
+You do not need to include file paths. Class names are globally unique in a well-structured codebase and are searchable in any IDE. If a class name is ambiguous, add the package fragment: `sgv2.jsonapi.service.resolver.FindOneCommandResolver`.
+
+---
+
+## Document Owner Block
+
+**What it is:** a named person responsible for this document's accuracy, plus a review cadence.
+
+**Why it matters:** documents without owners drift silently. When an architectural change lands and nobody updates the ONBOARDING.md, the document becomes a trap. A named owner with a scheduled review turns maintenance into a calendar event, not a hope.
+
+**How to fill it in:** name a specific person, not a team. Teams do not review documents; people do. The review cadence should be either time-based ("every 6 months") or event-based ("after any major architectural change") — ideally both. Err toward more frequent than you think necessary; you can always push a review if nothing changed.
+
+**Worked example (Stargate Data API):**
+
+```
+Owner: Jane Smith (Data Platform)
+Review cadence: every 6 months, or after any major architectural change
+Last reviewed: 2025-01
+```
+
+---
+
+## Section 1 — Codebase Purpose
+
+**What it is:** one to three sentences describing what this service or library does, who calls it, and what it produces.
+
+**Why it matters:** this is the first thing a new engineer reads. If they misunderstand the codebase's scope at this point, every subsequent section reinforces the wrong mental model.
+
+**How detailed to be:** one good paragraph is enough. Define no jargon here — if you need jargon, it goes in Section 4. Assume the reader has general software engineering knowledge but no prior context on this project.
+
+**Worked example (Stargate Data API):**
+
+> This service accepts JSON API requests from the Stargate coordinator and executes them against an Apache Cassandra cluster, returning JSON responses. It is the sole path for both document-model ("collection") and table-model operations on the cluster. It does not own the cluster or the schema — it translates incoming commands into CQL and hands execution off to the Cassandra driver.
+
+---
+
+## Section 2 — Layer Map
+
+**What it is:** a table of the major architectural layers, outermost first, with a key class or interface name at each layer.
+
+**Why it matters:** without a layer map, a new engineer opens the codebase and sees a flat wall of files. The layer map gives them the first organizing principle: "I'm looking at layer N, which means the contract I need to satisfy is defined by `[ClassName]`."
+
+**How detailed to be:** one row per layer. Name the class or interface that defines that layer's contract. Do not list every class in the layer — just the one that best describes what the layer does.
+
+**Worked example (Stargate Data API):**
+
+| Layer | Responsibility | Key symbol |
+|---|---|---|
+| Command | Dumb POJO representing the parsed incoming request | `FindOneCommand` |
+| CommandResolver | Picks the right Operation for this Command | `CommandResolver<C>` |
+| Operation | Describes how to execute the command | `Operation` |
+| Task / DBTask | Builds and issues the CQL statement | `DBTask` |
+| Cassandra driver | Executes CQL against the cluster | (driver boundary) |
+
+Note that `CommandResolver` is an interface; `FindOneCommandResolver` is one of 90+ concrete implementations. The layer map names the interface because that's the contract — implementations are details.
+
+---
+
+## Section 3 — Request Lifecycle
+
+**What it is:** a numbered walkthrough of one representative request, naming the class and method at each hop.
+
+**Why it matters:** a layer map shows structure; the request lifecycle shows motion. Together they answer "what is this system made of?" and "how does it actually run?". New engineers cannot contribute confidently until they can trace a request from entry to response.
+
+**How detailed to be:** trace one representative operation end to end. Name the method at each hop — not "the resolver" but "`FindOneCommandResolver.resolveCollectionCommand()`". A reader should be able to follow the trace in their IDE using nothing but the names you provide.
+
+**Worked example (Stargate Data API — `findOne` request):**
+
+1. **Entry:** `MeteredCommandProcessor.processCommand()` receives the incoming `FindOneCommand` and delegates to the processing pipeline.
+2. **Resolver selection:** `FindOneCommandResolver.resolveCollectionCommand()` inspects the request and branches across four sort paths: vector search, BM25, sorted (with `ChainedComparator`), and unsorted. Sort dispatch detection uses `SortClauseUtil`.
+3. **Operation construction:** the selected resolver method returns an `Operation` instance describing how to execute the command.
+4. **Task execution:** the `Operation` builds a `DBTask` (or `DBTask` subtype) that constructs the CQL statement.
+5. **Driver hand-off:** the task passes the CQL to the Cassandra driver, which executes against the cluster and returns a result set.
+6. **Response:** the result set is mapped back to JSON and returned to the coordinator.
+
+---
+
+## Section 4 — Domain Vocabulary
+
+**What it is:** a short glossary of terms that have a project-specific meaning, or that a new engineer needs to know to read the source.
+
+**Why it matters:** every codebase develops its own dialect. "Command", "resolver", "shredding", "deferred" — these mean specific things in this codebase that do not match their dictionary definitions. A new engineer who reads `DocumentShredder` without knowing what "shredding" means in this context will misread the code.
+
+**How detailed to be:** 5–10 terms, one or two sentences each. If you find yourself writing 15+ terms, you are building a glossary. Cut the terms a new engineer will look up themselves (standard Java, standard Cassandra concepts) and keep only the project-specific dialect.
+
+**Worked example (Stargate Data API):**
+
+| Term | Definition |
+|---|---|
+| **Shredding** | The process of decomposing an incoming JSON document into a flat row structure for Cassandra storage. Runs only on insert, collection-only. Key classes: `DocumentShredder`, `WritableShreddedDocument`. |
+| **Resolver** | A class implementing `CommandResolver<C>` that maps an incoming `Command` to an `Operation`. There are 90+ resolvers; naming convention is `[CommandName]Resolver`. |
+| **Collection** | A document-model namespace. Predates tables in this codebase; uses in-memory sorting via `ChainedComparator` rather than CQL `ORDER BY`. |
+| **Table** | A table-model namespace introduced later. Uses real CQL `ORDER BY` via `*CqlClause` classes. |
+| **Task / DBTask** | A unit of CQL work. Has its own retry policy (`TaskRetryPolicy`) separate from the driver-level retry policy. |
+| **LWT** | Lightweight Transaction — a Cassandra feature used for conditional writes. Calls that use LWT require special handling in the task layer. |
+
+---
+
+## Section 5 — Common Change Recipes
+
+**What it is:** ordered checklists for 3–5 common change tasks, naming the classes and methods to touch in order.
+
+**Why it matters:** this section is where the document earns most of its value. A new engineer assigned "add a new command" does not need to understand the entire codebase — they need to know which files to touch, in what order, and what interface to implement. This section answers that.
+
+**How detailed to be:** imperative steps only. "Create a `[CommandName]` class implementing `[InterfaceName]`" is enough. Do not explain the implementation — point to where it goes. If a step has a non-obvious constraint, add a one-clause note.
+
+**Worked example (Stargate Data API — adding a new command):**
+
+1. Create a new `[CommandName]Command` class as a POJO implementing the `Command` interface.
+2. Create a `[CommandName]CommandResolver` class implementing `CommandResolver<[CommandName]Command>`.
+3. Implement `resolveCollectionCommand()` and `resolveTableCommand()` in the resolver; branch for the collection and table paths separately.
+4. Register the command and resolver in the dependency injection configuration.
+5. Add error code constants for any new failure modes to the appropriate `RequestException` subclass.
+
+**Worked example (Stargate Data API — adding a new error code):**
+
+1. Identify the correct exception class for the error category (`RequestException` for client errors, `ServerException` for server errors).
+2. Add a new `Code` enum constant inside that exception class.
+3. Create a corresponding error message template in the YAML error resources.
+4. Throw using the pattern: `ExceptionClass.Code.YOUR_CODE.get(errVars(...))`.
+
+---
+
+## Section 6 — High-Signal Files by Question Type
+
+**What it is:** a lookup table mapping common questions to the one or two classes that best answer them.
+
+**Why it matters:** large codebases have hundreds of classes. A new engineer running a text search for "sort" in the Data API will get dozens of hits across the 90+ resolver files. This section cuts the noise: "for questions about sort dispatch, start at `SortClauseUtil`."
+
+**How detailed to be:** one entry per question type. Name only the best entry point — not every class that touches the concept. If you feel the need to list five classes for one question, that is a sign the answer is "it's complicated" and belongs in Section 7 (Known Gotchas) instead.
+
+**Worked example (Stargate Data API):**
+
+| Question type | Where to start |
+|---|---|
+| "How does findOne work?" | `FindOneCommandResolver.resolveCollectionCommand()` |
+| "Where does sort dispatch happen?" | `SortClauseUtil` |
+| "How does document storage work?" | `DocumentShredder` |
+| "How do I add retry behavior?" | `TaskRetryPolicy.shouldRetry()` |
+| "Where do error codes live?" | `RequestException`, `ServerException` |
+
+---
+
+## Section 7 — Known Gotchas
+
+**What it is:** invariants and negative-space rules that are NOT visible from reading the source — things a senior engineer mentions in code review but that are not captured in a comment or test.
+
+**Why it matters:** this is the section that most directly replaces the senior-engineer interrupt. "Renaming a resolver class breaks saved client flows" is not in the code. It is in the senior engineer's head. Moving it here is the highest-value thing you can do in this document.
+
+**How detailed to be:** state the rule, explain why it exists, name the consequence of violating it. One to three sentences per gotcha. If there is a key class that enforces or embodies the rule, name it.
+
+**Finding material:** if you cannot think of any gotchas, interview a senior engineer who reviews PRs on this codebase. Ask: "What mistakes do you keep catching in review?" That answer is this section.
+
+**Worked example (Stargate Data API):**
+
+---
+
+**Renaming a resolver class breaks saved client flows**
+
+Rule: do not rename a `*CommandResolver` class without a migration plan.
+Why: some client tooling and saved Stargate configurations reference resolver names as strings. A rename silently breaks these without compile-time warning.
+What breaks: runtime routing failures that appear as unexpected errors, not "class not found" errors.
+
+---
+
+**Collection and table paths are intentionally separate codepaths**
+
+Rule: do not unify the collection and table sort implementations.
+Why: collections predate tables and use in-memory sorting via `ChainedComparator`; tables use real CQL `ORDER BY` via `*CqlClause` classes. The semantic contracts are different.
+What breaks: if you route collection sort through the table CQL path, the sort semantics change silently — no exception, wrong results.
+
+---
+
+**Task-level retry and driver-level retry are independent — do not confuse them**
+
+Rule: `TaskRetryPolicy` (with its `NO_RETRY` constant and `shouldRetry()` override point) controls retries at the task layer. The Cassandra driver has its own separate retry policy.
+Why: they operate at different abstraction levels and handle different failure classes.
+What breaks: adding retry logic at the wrong level results in either under-retry (errors that should retry are surfaced immediately) or double-retry (errors that retry once at each level are retried twice, causing unexpected behavior under load).
+
+---
+
+## Ready to Test Checklist
+
+Before committing your completed `ONBOARDING.md`, run through this checklist:
+
+- [ ] **No line numbers.** Search the document for any reference to a line number (e.g., "line 72", ":72"). Replace every one with a symbol anchor.
+- [ ] **No file paths without a symbol.** Every file path reference should name a class or method, not just a path.
+- [ ] **Every class name is real.** Open your IDE and verify every class name you wrote actually exists in current source. Fix any that don't.
+- [ ] **Every method name is real.** Same check for method names.
+- [ ] **A new engineer can follow Section 3 in an IDE.** Hand the request lifecycle trace to someone unfamiliar with the codebase and ask them to find each step. If they can't, the trace is missing a class or method name.
+- [ ] **Section 7 has at least three gotchas.** If it doesn't, interview a senior engineer before committing.
+- [ ] **The owner block names a person, not a team.** "Data Platform" is not an owner. "Jane Smith (Data Platform)" is.
+- [ ] **The review cadence is scheduled.** Add a calendar reminder now. The document is worth nothing if it drifts.
+- [ ] **No TODO markers remain.** Search for `[PLACEHOLDER]` and `<!-- TODO:`. Every one must be replaced with real content.
