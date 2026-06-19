@@ -23,7 +23,7 @@ The skill works for any IBM team. The Stargate Data API — 90+ command resolver
 | Template | [`template/ONBOARDING.md`](template/ONBOARDING.md) | Fill-in-the-blanks template for any team |
 | Authoring Guide | [`template/AUTHORING_GUIDE.md`](template/AUTHORING_GUIDE.md) | How to write your ONBOARDING.md in 2–4 hours |
 | Reference Implementation | [`data-api/ONBOARDING.md`](data-api/ONBOARDING.md) | Fully populated for the Stargate Data API — the demo artifact |
-| Evaluation Scorecard | [`evaluation/SCORECARD.md`](evaluation/SCORECARD.md) | Three-arm evaluation: results filled in after Week 2–3 |
+| Evaluation Scorecard | [`evaluation/SCORECARD.md`](evaluation/SCORECARD.md) | Three-arm evaluation: **complete** — Arm 3 avg 4.8/5, delta +1.4 ✅ |
 
 ---
 
@@ -41,17 +41,19 @@ The skill works for any IBM team. The Stargate Data API — 90+ command resolver
 
 ## The Demo
 
-The demo runs three arms on the same question: *"I need to add a new sort type to the Data API. Where do I start?"*
+The demo runs three arms across five tasks. Evaluation is complete.
 
-| Arm | Condition | Expected score |
+| Arm | Condition | Actual avg score |
 |---|---|---|
-| 1 | Generic Bob — no skill, no source | 1–2 / 5 |
-| 2 | Bob + skill + live source, no ONBOARDING.md | 2–3 / 5 |
-| 3 | Bob + skill + ONBOARDING.md | 4–5 / 5 |
+| 1 | Generic Bob — no skill, no source | **1.4 / 5** |
+| 2 | Bob + skill + live source, no ONBOARDING.md | **3.4 / 5** |
+| 3 | Bob + skill + ONBOARDING.md | **4.8 / 5** |
 
-The arm (2) → arm (3) delta is the claim under test. If it's small, the doc's value is rationale and gotchas — and the submission says so. Either outcome is credible.
+**Delta (Arm 2 → Arm 3): +1.4** ✅ · **Arm 3 avg: 4.8 / 5.0** ✅ — both success criteria met.
 
-**The refusal clip:** the demo also shows Bob correcting a deliberately stale claim planted in the ONBOARDING.md — citing the source file and line that contradicts it. Almost nobody demos a confident, evidenced *"no"*.
+The sharpest result was **T4** (design-intent gotcha): Arm 2 actively recommended sharing collection/table logic (score 1.3 — the worst possible answer); Arm 3 cleanly refused with the precise failure modes from ONBOARDING.md Section 7 (score 5.0). This is the case the ONBOARDING.md uniquely enables: source alone is insufficient; you need the authored rationale.
+
+**The refusal clip:** the demo also shows Bob correcting a deliberately stale claim planted in the ONBOARDING.md — citing the source file that contradicts it. Almost nobody demos a confident, evidenced *"no"*.
 
 ---
 

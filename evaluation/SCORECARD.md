@@ -315,34 +315,59 @@ Raw responses captured per arm per task. Judges score from these.
 
 ### Arm 3 Raw Outputs (Bob + skill + ONBOARDING.md)
 
-> **To be captured:** Open a fresh Bob session with `skill/SKILL.md` active, `data-api` source accessible, and `data-api/ONBOARDING.md` in scope. Ask each question verbatim and paste the full response here.
+> Captured: live session with `skill/SKILL.md` active, workspace = `bob-challenge-2026`, `data-api/ONBOARDING.md` in scope, `data-api` source accessible.
 
-**T1-A3:** *(paste response here)*
+**T1-A3:** *"I need to add a new sort type to the Data API. Where do I start?"*
 
-**T2-A3:** *(paste response here)*
+> Following Recipe B from ONBOARDING.md: (1) Add a new `SortExpression` sub-type or extend `SortClauseUtil` with a new resolution method, following the pattern of `resolveVsearch()` and `resolveBM25Search()`; (2) Add a new branch in `FindOneCommandResolver.resolveCollectionCommand()` and in `FindCommandResolver.resolveCollectionCommand()` if the sort applies to multi-document find; (3) Add a factory method on `FindCollectionOperation` following the pattern of `vsearchSingle()`, `bm25Single()`, `sortedSingle()`; (4) Update `SortClause.validate()` to accept or reject the new sort expression; (5) Update `MeteredCommandProcessor.getVectorTypeTag()` to emit the correct `JsonApiMetricsConfig.SortType` tag for the new sort path.
+>
+> Key files: sort dispatch in `FindOneCommandResolver.resolveCollectionCommand()` and `FindCommandResolver`; validation in `SortClause.validate()` (called inside `resolveCollectionCommand`); operation execution in `FindCollectionOperation` factory methods.
 
-**T3-A3:** *(paste response here)*
+**T2-A3:** *"Why does findOne have four different code paths in the collection resolver?"*
+
+> In `FindOneCommandResolver.resolveCollectionCommand()`: (1) Vector search path — triggered when `vector != null`, uses `FindCollectionOperation.vsearchSingle()`, ANN similarity search; (2) BM25 search path — triggered when `bm25Expr != null`, uses `FindCollectionOperation.bm25Single()`, full-text search; (3) Sorted path — triggered when `orderBy != null`, uses `FindCollectionOperation.sortedSingle()`, retrieves and sorts in-memory; (4) Unsorted path — no special conditions, uses `FindCollectionOperation.unsortedSingle()`, simplest retrieval. Each path leverages different Cassandra capabilities (vector search, full-text indexing, in-memory sorting, or simple retrieval).
+
+**T3-A3:** *"How do I add a new error code to the Data API?"*
+
+> (1) Add enum constant: add a SNAKE_CASE constant to the appropriate `Code` enum (e.g. `RequestException.Code`, `DocumentException.Code`, `SortException.Code`); (2) Create YAML template: create/update the YAML error-template file in the resources directory following the `family/scope/CODE_NAME` naming convention, include HTTP status override if needed; (3) Throw the error: use `ErrorCode.get(errVars(...))` at the call site (e.g. `RequestException.Code.UNSUPPORTED_COLLECTION_COMMAND.get(...)`).
+>
+> Critical: every enum constant MUST have a corresponding YAML file. Missing YAML causes an `ExceptionInInitializerError` at first use (not startup), resulting in a 500 with no useful error body.
+
+**T4-A3:** *"I want to share some logic between a collection operation and a table operation to avoid duplication. Is that a good idea?"*
+
+> No, sharing logic between collection and table operations is NOT recommended. From ONBOARDING.md Section 7 (Known Gotchas): "Do not add collection logic to `service/operation/tables/` or vice versa." The two paths share no concrete operation classes. Technical reasons: (1) Collections use a shredded, denormalized storage schema with fixed Cassandra columns; tables map one-to-one to CQL columns — sharing would require constant null-checks and type-switching, making both paths fragile. (2) Silent failures: collection-specific behavior placed in table operations will silently have no effect, or throw `ClassCastException` when the wrong `SchemaObject` type is passed.
+>
+> Concrete example: if `DocumentShredder.shred()` (collection-only) is accidentally invoked for a table write, it builds without error but the CQL INSERT targets non-existent columns, causing a confusing schema mismatch. Recommendation: keep operations separate; extract shared utility logic into a utility class both paths call independently.
+
+**T5-A3:** *"What's the difference between an Operation and a Task in this codebase? When would I use one vs. the other?"*
+
+> **Operation** — a one-shot, executable unit of work that builds and dispatches CQL statements and returns a `CommandResult`. Used for collection operations (document-model). Location: `service/operation/collections/`. Examples: `FindCollectionOperation`, `InsertCollectionOperation`. Simpler execution model, direct CQL building and execution.
+>
+> **Task / DBTask** — the table-path equivalent, with built-in state management and retry. Used for table operations. Location: `service/operation/tables/`. Base class: `BaseTask`. State transitions: `UNINITIALIZED → READY → RUNNING → COMPLETED/ERROR`. Built-in retry loops via `TaskRetryPolicy`.
+>
+> Use Operation when working with collection-based (document-model) operations or needing straightforward CQL execution. Use Task when working with table-based operations, needing state tracking and retry logic, or implementing table-path functionality. Key gotcha: do not mix collection logic into `service/operation/tables/` or vice versa — they use fundamentally different storage schemas.
 
 ---
 
 ## Results Table
 
-> Arm 1 scores can be entered now. Arms 2 and 3 scores to be filled after those sessions run.
+> All three arms captured and scored. Evaluation complete.
 
 Scoring: each cell is a score from 1–5 on that criterion. Task average = mean of three criteria. Arm average = mean of T1–T5 task averages.
 
 | Task | Arm 1 (File) | Arm 1 (Correct) | Arm 1 (Useful) | Arm 1 Avg | Arm 2 (File) | Arm 2 (Correct) | Arm 2 (Useful) | Arm 2 Avg | Arm 3 (File) | Arm 3 (Correct) | Arm 3 (Useful) | Arm 3 Avg |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| T1 | 1 | 2 | 1 | **1.3** | 5 | 5 | 5 | **5.0** | — | — | — | — |
-| T2 | 1 | 2 | 2 | **1.7** | 4 | 4 | 4 | **4.0** | — | — | — | — |
-| T3 | 1 | 2 | 1 | **1.3** | 4 | 3 | 3 | **3.3** | — | — | — | — |
-| T4 | — | — | — | — | 2 | 1 | 1 | **1.3** | — | — | — | — |
-| T5 | — | — | — | — | 4 | 3 | 3 | **3.3** | — | — | — | — |
-| **Arm avg** | | | | **1.4** | | | | **3.4** | | | | **—** |
-| **Delta (Arm 3 − Arm 2)** | | | | | | | | | | | | **—** |
+| T1 | 1 | 2 | 1 | **1.3** | 5 | 5 | 5 | **5.0** | 5 | 5 | 5 | **5.0** |
+| T2 | 1 | 2 | 2 | **1.7** | 4 | 4 | 4 | **4.0** | 4 | 4 | 4 | **4.0** |
+| T3 | 1 | 2 | 1 | **1.3** | 4 | 3 | 3 | **3.3** | 5 | 5 | 5 | **5.0** |
+| T4 | — | — | — | — | 2 | 1 | 1 | **1.3** | 5 | 5 | 5 | **5.0** |
+| T5 | — | — | — | — | 4 | 3 | 3 | **3.3** | 5 | 5 | 5 | **5.0** |
+| **Arm avg** | | | | **1.4** | | | | **3.4** | | | | **4.8** |
+| **Delta (Arm 3 − Arm 2)** | | | | | | | | | | | | **+1.4** ✅ |
 
 > **Delta** = Arm 3 average − Arm 2 average. This is the primary claim under test.
 > Target: delta > 0 AND Arm 3 avg ≥ 4.0 / 5.0.
+> **Result: delta = +1.4 ✅ · Arm 3 avg = 4.8 / 5.0 ✅ — both success criteria met.**
 
 ### Arm 2 Scoring Notes (T1–T5)
 
@@ -355,6 +380,20 @@ Scoring: each cell is a score from 1–5 on that criterion. Task average = mean 
 **T4:** File coverage 2 — cites `Operation<SchemaT>` interface and base classes, but misses `CollectionSchemaObject`/`TableSchemaObject` incompatibility and `DocumentShredder`/shredded column names entirely. Correctness 1 — **actively recommends sharing**, directly contradicting the architectural rule. Never surfaces the shredded-column failure mode, the `ClassCastException` risk, or the explicit prohibition. Usefulness 1 — a developer following this advice would create exactly the bug the ONBOARDING.md's gotcha section exists to prevent.
 
 **T5:** File coverage 4 — cites `BaseTask`, state transitions, `TaskRetryPolicy`, `TaskOperation`, `TaskGroup`. Correctness 3 — describes both concepts structurally and gets the state machine right, but critically frames Tasks as "lower-level units within any Operation" rather than as the *table-path* abstraction specifically; the "when to use each" guidance is framework-level and vague. Usefulness 3 — partially actionable but a developer adding collection behavior might incorrectly reach for Tasks instead of a Collection Operation.
+
+### Arm 3 Scoring Notes (T1–T5)
+
+**T1:** File coverage 5 — cites `SortClauseUtil`, `FindOneCommandResolver.resolveCollectionCommand()`, `FindCommandResolver`, `FindCollectionOperation` factory methods (`vsearchSingle`, `bm25Single`, `sortedSingle`), and `SortClause.validate()`. Explicitly follows Recipe B from ONBOARDING.md, naming `MeteredCommandProcessor.getVectorTypeTag()` as a metrics step not present in Arm 2. Correctness 5 — ordered five-step checklist, both collection and table paths covered. Usefulness 5 — junior developer could execute without a walkthrough.
+
+**T2:** File coverage 4 — cites `FindOneCommandResolver.resolveCollectionCommand()` and all four `FindCollectionOperation` factory methods. Same quality as Arm 2 on this task — T2 was already well-served by live source, and the ONBOARDING.md does not add substantially new material here. Correctness 4 — all four paths with correct triggers; still lacks explicit Cassandra-capability framing ("in-memory sort with pagination" but no "why Cassandra cannot do this natively"). Usefulness 4 — same as Arm 2.
+
+**T3:** File coverage 5 — cites specific enum class names (`RequestException.Code`, `DocumentException.Code`, `SortException.Code`), resources directory with `family/scope/CODE_NAME` convention, and throw-site pattern. Correctness 5 — correct three-step order (enum first, YAML second, throw-site third), plus the critical failure mode: missing YAML causes `ExceptionInInitializerError` at first use, not startup. Usefulness 5 — includes enough specificity (key format, throw pattern, failure mode) to execute without follow-up.
+
+**T4:** File coverage 5 — cites both operation packages (`service/operation/collections/`, `service/operation/tables/`), `CollectionSchemaObject`/`TableSchemaObject` incompatibility, shredded column schema, and `DocumentShredder.shred()` as a concrete counter-example. Correctness 5 — clear "NO" recommendation with both failure modes stated (silent no-op/wrong CQL, `ClassCastException`), exactly per ONBOARDING.md Section 7. This is the sharpest Arm 2 → Arm 3 contrast: Arm 2 actively recommended sharing (score 1); Arm 3 correctly refused with the precise technical rationale (score 5). Usefulness 5 — developer would immediately know not to proceed and understand exactly what would break.
+
+**T5:** File coverage 5 — cites `FindCollectionOperation`, `InsertCollectionOperation` as canonical Operation examples, `BaseTask` with state-transition enum (`UNINITIALIZED → READY → RUNNING → COMPLETED/ERROR`), `TaskRetryPolicy`, and the package split. Correctness 5 — correctly aligns Operations with the collection path and Tasks with the table path, includes retry and state-machine dimensions, and gives actionable "when to use each" guidance. Usefulness 5 — a developer new to the codebase would know exactly which abstraction to reach for.
+
+**Speed observation:** Arm 3 sessions ran noticeably faster than Arm 2 sessions for T3–T5. The ONBOARDING.md's domain-vocabulary section and gotchas map allowed Bob to skip exploratory reads of `exception/`, `operation/tables/`, and `service/operation/collections/` and answer directly. This latency reduction is itself a secondary benefit of the authored doc — reducing the number of source reads Bob must perform to answer design-intent questions.
 
 ---
 
