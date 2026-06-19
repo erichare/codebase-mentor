@@ -76,7 +76,7 @@ Write the `ONBOARDING.md` template and a companion authoring guide that any IBM 
 
 ## Sub-Task 3 — Data API Reference ONBOARDING.md
 
-**Status:** `[ ] pending`
+**Status:** `[x] done`
 
 ### Intent
 Author the reference ONBOARDING.md for the Stargate Data API, populated entirely from live source in `/Users/erichare/GitHub/data-api`. This is both the demo artifact and the worked example of the template. It must cover the five-layer pipeline, the collection/table split rationale, shredding, the error template system, and the TaskRetryPolicy framework. All references use symbol anchors. A known-wrong stale claim is planted deliberately for the refusal demo clip.
@@ -170,6 +170,6 @@ Replace the minimal README.md with a submission-quality README that serves as bo
 | `skill/SKILL.md` | 1 | `[x] done` |
 | `template/ONBOARDING.md` | 2 | `[x] done` |
 | `template/AUTHORING_GUIDE.md` | 2 | `[x] done` |
-| `data-api/ONBOARDING.md` | 3 | `[ ] pending` |
+| `data-api/ONBOARDING.md` | 3 | `[x] done` |
 | `evaluation/SCORECARD.md` | 4 | `[ ] pending` |
 | `README.md` | 5 | `[ ] pending` |
