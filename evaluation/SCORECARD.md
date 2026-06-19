@@ -224,25 +224,80 @@ To be determined by judges at the time of question selection. As with T4, judges
 
 ---
 
+## Raw Outputs
+
+Raw responses captured per arm per task. Judges score from these.
+
+---
+
+### Arm 1 Raw Outputs (Generic Bob — no skill, no source, no ONBOARDING.md)
+
+> Captured: initial evaluation run. Answers reflect pre-training knowledge only — no source reads performed.
+
+**T1-A1:** *"I need to add a new sort type to the Data API. Where do I start?"*
+
+> Look for sort-related classes in the query or filter layer. You'll likely want to add an enum value or a new sort clause class, update the parser to recognize the new sort keyword, and then handle it in whatever operation executes the query. Check existing sort types to understand the pattern.
+
+**T2-A1:** *"Why does findOne have four different code paths in the collection resolver?"*
+
+> Probably to handle different index types or query strategies — for example, a vector similarity search takes a different path than a regular field filter, which takes a different path than a sorted scan. The branches likely reflect what Cassandra can do natively vs. what has to be handled in application memory.
+
+**T3-A1:** *"How do I add a new error code to the Data API?"*
+
+> Find where existing error codes are defined — probably an enum or constants class. Add your new code there. Then find where errors are constructed and returned, and add a case for your new code. Make sure any error message strings are in the right place, possibly a messages file or resource bundle.
+
+---
+
+### Arm 2 Raw Outputs (Bob + skill + live source, no ONBOARDING.md)
+
+> **To be captured:** Open a fresh Bob session with `skill/SKILL.md` active and the `data-api` repo as the workspace. Do NOT provide `data-api/ONBOARDING.md`. Ask each question verbatim and paste the full response here.
+
+**T1-A2:** *(paste response here)*
+
+**T2-A2:** *(paste response here)*
+
+**T3-A2:** *(paste response here)*
+
+---
+
+### Arm 3 Raw Outputs (Bob + skill + ONBOARDING.md)
+
+> **To be captured:** Open a fresh Bob session with `skill/SKILL.md` active, `data-api` source accessible, and `data-api/ONBOARDING.md` in scope. Ask each question verbatim and paste the full response here.
+
+**T1-A3:** *(paste response here)*
+
+**T2-A3:** *(paste response here)*
+
+**T3-A3:** *(paste response here)*
+
+---
+
 ## Results Table
 
-> All cells empty — to be filled after evaluation runs.
+> Arm 1 scores can be entered now. Arms 2 and 3 scores to be filled after those sessions run.
 
-Scoring: each cell shows `file / correct / useful / avg` on the 1–5 scale.  
-Task average = mean of the three criteria. Arm average = mean of T1–T5 task averages.
+Scoring: each cell is a score from 1–5 on that criterion. Task average = mean of three criteria. Arm average = mean of T1–T5 task averages.
 
 | Task | Arm 1 (File) | Arm 1 (Correct) | Arm 1 (Useful) | Arm 1 Avg | Arm 2 (File) | Arm 2 (Correct) | Arm 2 (Useful) | Arm 2 Avg | Arm 3 (File) | Arm 3 (Correct) | Arm 3 (Useful) | Arm 3 Avg |
 |------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| T1 | — | — | — | — | — | — | — | — | — | — | — | — |
-| T2 | — | — | — | — | — | — | — | — | — | — | — | — |
-| T3 | — | — | — | — | — | — | — | — | — | — | — | — |
+| T1 | 1 | 2 | 1 | **1.3** | — | — | — | — | — | — | — | — |
+| T2 | 1 | 2 | 2 | **1.7** | — | — | — | — | — | — | — | — |
+| T3 | 1 | 2 | 1 | **1.3** | — | — | — | — | — | — | — | — |
 | T4 | — | — | — | — | — | — | — | — | — | — | — | — |
 | T5 | — | — | — | — | — | — | — | — | — | — | — | — |
-| **Arm avg** | | | | **—** | | | | **—** | | | | **—** |
+| **Arm avg** | | | | **1.4** | | | | **—** | | | | **—** |
 | **Delta (Arm 3 − Arm 2)** | | | | | | | | | | | | **—** |
 
-> **Delta** = Arm 3 average − Arm 2 average. This is the primary claim under test.  
+> **Delta** = Arm 3 average − Arm 2 average. This is the primary claim under test.
 > Target: delta > 0 AND Arm 3 avg ≥ 4.0 / 5.0.
+
+### Arm 1 Scoring Notes (T1–T3)
+
+**T1:** File coverage 1 — no class or method names cited; "sort clause class" and "query layer" are generic. Correctness 2 — correctly identifies that a new class and parser change are needed, but misses the collection/table split entirely. Usefulness 1 — not actionable without already knowing the codebase.
+
+**T2:** File coverage 1 — no class names. Correctness 2 — correctly identifies that different index types drive the split and notes the in-memory sort case, but does not name the four paths or connect them to specific Cassandra capabilities. Usefulness 2 — a mid-level developer could confirm this is the right area but couldn't act without more.
+
+**T3:** File coverage 1 — "enum or constants class" and "messages file" are generic; no specific class named. Correctness 2 — identifies the enum + message pattern but misses the YAML template infrastructure entirely. Usefulness 1 — cannot execute without discovering the YAML format independently.
 
 ---
 
