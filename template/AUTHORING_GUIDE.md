@@ -1,6 +1,11 @@
 # ONBOARDING.md Authoring Guide
 
-This guide walks you through each of the seven sections in `template/ONBOARDING.md`. For every section it explains what to write, how detailed to be, and gives a short worked example drawn from the Stargate Data API — a real IBM-adjacent codebase with 90+ command resolvers, a five-layer request pipeline, and no prior ONBOARDING.md.
+This guide walks you through each of the seven sections in `template/ONBOARDING.md`. For every section it explains what to write, how detailed to be, and gives worked examples from two different codebase archetypes:
+
+- **Stargate Data API** — a request/response Java service with 39 concrete command resolvers, a five-layer pipeline, and no prior ONBOARDING.md. *Use this if your codebase handles discrete user requests: REST APIs, gRPC services, command processors.*
+- **ibm-data-sync** (illustrative) — a batch ETL pipeline that extracts records from source systems, transforms them through a stage graph, and loads them into a target store on a schedule. *Use this if your codebase runs as a job, pipeline, daemon, or library: ETL, stream processors, ML training, data exporters, shared utility libraries.*
+
+Both examples use symbol anchors and follow the same seven-section structure. Pick whichever is closer to your codebase and adapt from there.
 
 **Time budget:** most teams complete a first draft in 2–4 hours. See the break-even framing below.
 
@@ -66,13 +71,13 @@ Last reviewed: 2025-01
 
 ## Section 2 — Layer Map
 
-**What it is:** a table of the major architectural layers, outermost first, with a key class or interface name at each layer.
+**What it is:** a table of the major architectural layers or stages, in execution order, with a key class or interface name at each layer.
 
 **Why it matters:** without a layer map, a new engineer opens the codebase and sees a flat wall of files. The layer map gives them the first organizing principle: "I'm looking at layer N, which means the contract I need to satisfy is defined by `[ClassName]`."
 
-**How detailed to be:** one row per layer. Name the class or interface that defines that layer's contract. Do not list every class in the layer — just the one that best describes what the layer does.
+**How detailed to be:** one row per layer. Name the class or interface that defines that layer's contract. Do not list every class in the layer — just the one that best describes what the layer does. For a pipeline codebase, "outermost first" means "what runs first in the execution graph" — use whichever ordering makes the execution flow obvious.
 
-**Worked example (Stargate Data API):**
+**Worked example (Stargate Data API — request/response service):**
 
 | Layer | Responsibility | Key symbol |
 |---|---|---|
@@ -82,17 +87,29 @@ Last reviewed: 2025-01
 | Task / DBTask | Builds and issues the CQL statement | `DBTask` |
 | Cassandra driver | Executes CQL against the cluster | (driver boundary) |
 
-Note that `CommandResolver` is an interface; `FindOneCommandResolver` is one of 90+ concrete implementations. The layer map names the interface because that's the contract — implementations are details.
+Note that `CommandResolver` is an interface; `FindOneCommandResolver` is one of 39 concrete `*CommandResolver` implementations. The layer map names the interface because that's the contract — implementations are details.
+
+**Worked example (ibm-data-sync — batch ETL pipeline):**
+
+| Stage | Responsibility | Key symbol |
+|---|---|---|
+| Source | Read raw records from the upstream system | `SourceConnector` (interface); e.g. `JdbcSourceConnector` |
+| Extract | Parse and validate each raw record into a typed `SyncRecord` | `RecordExtractor` |
+| Transform | Apply field mappings, enrichments, and filtering rules | `TransformChain`, `TransformStage` (interface) |
+| Load | Write the final records to the target store in batches | `TargetWriter` (interface); e.g. `CosTargetWriter` |
+| Coordinator | Manage job state, checkpointing, and error recovery across stages | `SyncJobCoordinator` |
+
+Note that for a pipeline, the "layers" are execution stages rather than request-handling tiers — the table still names one key symbol per stage.
 
 ---
 
-## Section 3 — Request Lifecycle
+## Section 3 — Execution Lifecycle
 
-**What it is:** a numbered walkthrough of one representative request, naming the class and method at each hop.
+**What it is:** a numbered walkthrough of one representative execution path — a request, a job run, an event, a batch — naming the class and method at each hop.
 
-**Why it matters:** a layer map shows structure; the request lifecycle shows motion. Together they answer "what is this system made of?" and "how does it actually run?". New engineers cannot contribute confidently until they can trace a request from entry to response.
+**Why it matters:** a layer map shows structure; the execution lifecycle shows motion. Together they answer "what is this system made of?" and "how does it actually run?". New engineers cannot contribute confidently until they can trace a unit of work from entry to completion.
 
-**How detailed to be:** trace one representative operation end to end. Name the method at each hop — not "the resolver" but "`FindOneCommandResolver.resolveCollectionCommand()`". A reader should be able to follow the trace in their IDE using nothing but the names you provide.
+**How detailed to be:** trace one representative case end to end. Name the method at each hop — not "the resolver" but "`FindOneCommandResolver.resolveCollectionCommand()`". A reader should be able to follow the trace in their IDE using nothing but the names you provide. For a pipeline codebase, "entry" is the job trigger or the first method that runs when a record is consumed. For a **library**, there is no job entry point — trace a typical caller's use of the primary public API instead (e.g., "caller constructs `Client`, calls `Client.submit()`, which invokes `RequestQueue.enqueue()`, which…").
 
 **Worked example (Stargate Data API — `findOne` request):**
 
@@ -102,6 +119,15 @@ Note that `CommandResolver` is an interface; `FindOneCommandResolver` is one of 
 4. **Task execution:** the `Operation` builds a `DBTask` (or `DBTask` subtype) that constructs the CQL statement.
 5. **Driver hand-off:** the task passes the CQL to the Cassandra driver, which executes against the cluster and returns a result set.
 6. **Response:** the result set is mapped back to JSON and returned to the coordinator.
+
+**Worked example (ibm-data-sync — one full sync run):**
+
+1. **Job trigger:** `SyncJobCoordinator.runJob()` is invoked by the scheduler (or the CLI entry point `SyncRunner.main()`). It loads the job config from `JobConfigLoader.load()` and initialises the stage graph.
+2. **Source read:** `JdbcSourceConnector.fetchBatch()` queries the upstream database for records changed since the last checkpoint cursor. Returns an `Iterator<RawRecord>`.
+3. **Extraction:** `RecordExtractor.extract()` parses each `RawRecord` into a typed `SyncRecord`, applying schema validation. Invalid records are routed to `DeadLetterQueue.enqueue()`.
+4. **Transform chain:** `TransformChain.apply()` runs each `TransformStage` in order (field mapping, enrichment, filter). Each stage returns a `SyncRecord` or `null` (drop).
+5. **Load:** `CosTargetWriter.writeBatch()` accumulates records into `batchConfig.maxBatchSize()` chunks and issues PUT requests to COS. Failures are retried via `RetryPolicy.shouldRetry()`.
+6. **Checkpoint:** on success, `CheckpointStore.advance()` persists the new cursor so the next run resumes from the correct offset.
 
 ---
 
@@ -118,11 +144,22 @@ Note that `CommandResolver` is an interface; `FindOneCommandResolver` is one of 
 | Term | Definition |
 |---|---|
 | **Shredding** | The process of decomposing an incoming JSON document into a flat row structure for Cassandra storage. Runs only on insert, collection-only. Key classes: `DocumentShredder`, `WritableShreddedDocument`. |
-| **Resolver** | A class implementing `CommandResolver<C>` that maps an incoming `Command` to an `Operation`. There are 90+ resolvers; naming convention is `[CommandName]Resolver`. |
+| **Resolver** | A class implementing `CommandResolver<C>` that maps an incoming `Command` to an `Operation`. There are 39 concrete `*CommandResolver` implementations; naming convention is `[CommandName]Resolver`. |
 | **Collection** | A document-model namespace. Predates tables in this codebase; uses in-memory sorting via `ChainedComparator` rather than CQL `ORDER BY`. |
 | **Table** | A table-model namespace introduced later. Uses real CQL `ORDER BY` via `*CqlClause` classes. |
 | **Task / DBTask** | A unit of CQL work. Has its own retry policy (`TaskRetryPolicy`) separate from the driver-level retry policy. |
 | **LWT** | Lightweight Transaction — a Cassandra feature used for conditional writes. Calls that use LWT require special handling in the task layer. |
+
+**Worked example (ibm-data-sync — batch ETL pipeline):**
+
+| Term | Definition |
+|---|---|
+| **SyncRecord** | A typed, validated record that has passed extraction and is ready for transformation. Carries both data fields and metadata (source timestamp, record ID, partition key). Key class: `SyncRecord`. |
+| **Checkpoint** | A persisted cursor that tracks the last successfully processed record offset, allowing jobs to resume from the correct position after a failure. Managed by `CheckpointStore`. |
+| **Dead letter queue** | A holding area for records that fail validation or transformation. Allows the job to proceed without blocking on individual bad records. Key class: `DeadLetterQueue`. |
+| **TransformStage** | A single atomic unit in the transform pipeline. Each stage receives a `SyncRecord` and returns a modified `SyncRecord` or `null` (drop). Stages run in `@Order` sequence. |
+| **WriteBatch** | The unit of writes to the target store. Records are accumulated into `batchConfig.maxBatchSize()` chunks before issuing a bulk write. |
+| **Idempotency token** | A unique per-record identifier used by `TargetWriter` to deduplicate retried writes. Prevents double-write on job restart. |
 
 ---
 
@@ -130,7 +167,7 @@ Note that `CommandResolver` is an interface; `FindOneCommandResolver` is one of 
 
 **What it is:** ordered checklists for 3–5 common change tasks, naming the classes and methods to touch in order.
 
-**Why it matters:** this section is where the document earns most of its value. A new engineer assigned "add a new command" does not need to understand the entire codebase — they need to know which files to touch, in what order, and what interface to implement. This section answers that.
+**Why it matters:** this section is where the document earns most of its value. A new engineer assigned "add a new command" or "add a new transform stage" does not need to understand the entire codebase — they need to know which files to touch, in what order, and what interface to implement. This section answers that.
 
 **How detailed to be:** imperative steps only. "Create a `[CommandName]` class implementing `[InterfaceName]`" is enough. Do not explain the implementation — point to where it goes. If a step has a non-obvious constraint, add a one-clause note.
 
@@ -149,13 +186,28 @@ Note that `CommandResolver` is an interface; `FindOneCommandResolver` is one of 
 3. Create a corresponding error message template in the YAML error resources.
 4. Throw using the pattern: `ExceptionClass.Code.YOUR_CODE.get(errVars(...))`.
 
+**Worked example (ibm-data-sync — adding a new transform stage):**
+
+1. Create a new class implementing `TransformStage` — implement `apply(SyncRecord): SyncRecord` (return `null` to drop the record).
+2. Annotate with `@TransformStage.Order(n)` to set its position in the `TransformChain`. Check existing stage annotations to avoid collisions.
+3. Register the new stage in `TransformChainFactory.buildChain()` — it reads stage order from annotations, so registration is the only wiring required.
+4. Add a config key to `SyncJobConfig` if the stage needs a tunable parameter; bind it in `JobConfigLoader.load()`.
+5. Add a unit test extending `AbstractTransformStageTest` — the base class handles setup and provides a `SyncRecord` factory.
+
+**Worked example (ibm-data-sync — swapping in a new target writer):**
+
+1. Implement `TargetWriter` — `writeBatch(List<SyncRecord>)` and `close()` are the required methods.
+2. Add a new `WriterType` enum constant to `WriterConfig.WriterType`.
+3. Add a case to `TargetWriterFactory.create()` that instantiates the new writer from the job config.
+4. Update `SyncJobConfig` with any new config keys the writer needs (connection string, bucket name, etc.).
+
 ---
 
 ## Section 6 — High-Signal Files by Question Type
 
 **What it is:** a lookup table mapping common questions to the one or two classes that best answer them.
 
-**Why it matters:** large codebases have hundreds of classes. A new engineer running a text search for "sort" in the Data API will get dozens of hits across the 90+ resolver files. This section cuts the noise: "for questions about sort dispatch, start at `SortClauseUtil`."
+**Why it matters:** large codebases have hundreds of classes. A new engineer running a text search for "sort" in the Data API will get dozens of hits across the resolver files. This section cuts the noise: "for questions about sort dispatch, start at `SortClauseUtil`."
 
 **How detailed to be:** one entry per question type. Name only the best entry point — not every class that touches the concept. If you feel the need to list five classes for one question, that is a sign the answer is "it's complicated" and belongs in Section 7 (Known Gotchas) instead.
 
@@ -168,6 +220,16 @@ Note that `CommandResolver` is an interface; `FindOneCommandResolver` is one of 
 | "How does document storage work?" | `DocumentShredder` |
 | "How do I add retry behavior?" | `TaskRetryPolicy.shouldRetry()` |
 | "Where do error codes live?" | `RequestException`, `ServerException` |
+
+**Worked example (ibm-data-sync — batch ETL pipeline):**
+
+| Question type | Where to start |
+|---|---|
+| "How does a sync job run end-to-end?" | `SyncJobCoordinator.runJob()` |
+| "Where does record validation happen?" | `RecordExtractor.extract()` |
+| "How do I add a new transform?" | `TransformStage` (interface), `TransformChainFactory` |
+| "What happens when a record fails?" | `DeadLetterQueue.enqueue()`, `FailureHandler` |
+| "How does checkpointing work?" | `CheckpointStore.advance()`, `CheckpointStore.restore()` |
 
 ---
 
@@ -206,6 +268,24 @@ What breaks: if you route collection sort through the table CQL path, the sort s
 Rule: `TaskRetryPolicy` (with its `NO_RETRY` constant and `shouldRetry()` override point) controls retries at the task layer. The Cassandra driver has its own separate retry policy.
 Why: they operate at different abstraction levels and handle different failure classes.
 What breaks: adding retry logic at the wrong level results in either under-retry (errors that should retry are surfaced immediately) or double-retry (errors that retry once at each level are retried twice, causing unexpected behavior under load).
+
+---
+
+**Worked example (ibm-data-sync — batch ETL pipeline):**
+
+**Checkpoint offsets must be advanced only after target write succeeds**
+
+Rule: `CheckpointStore.advance()` must be called *after* `TargetWriter.writeBatch()` returns success, not before. The checkpoint update and the write are not transactional.
+Why: if the job crashes after advancing the checkpoint but before completing the write, the next run resumes past those records and they are permanently lost.
+What breaks: data loss. The source sees those records as processed (cursor advanced), but they never landed in the target store.
+
+---
+
+**Transform stages cannot be reordered without reviewing order-dependency invariants**
+
+Rule: when changing a `TransformStage`'s `@Order` annotation, review whether other stages depend on its output. The codebase does not enforce stage dependencies at compile time.
+Why: some stages assume earlier stages have already run — for example, `EnrichmentStage` expects `ValidationStage` to have already set the `recordType` field.
+What breaks: if enrichment runs before validation, `recordType` is null and the enrichment lookup silently fails, producing incomplete records.
 
 ---
 

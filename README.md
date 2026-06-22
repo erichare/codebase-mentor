@@ -11,7 +11,7 @@ A reusable Bob skill that turns any IBM codebase with a short `ONBOARDING.md` in
 
 On the Stargate Data API team, a new engineer's first real architecture question typically costs 30–60 minutes of senior-engineer interrupt time. With three to five such events per onboarding and a 2–4 hour one-time authoring investment, the break-even is one to two new hires. After that it compounds: every subsequent hire, every cross-team contributor, every on-call engineer in unfamiliar code.
 
-The skill works for any IBM team. The Stargate Data API — 90+ command resolvers, a five-layer request pipeline, a custom task-retry framework, no AGENTS.md — is an honest stress test.
+The skill works for any IBM team with a codebase and a short ONBOARDING.md — request/response services, batch pipelines, stream processors, libraries. The Stargate Data API — 39 concrete command resolvers, a five-layer request pipeline, a custom task-retry framework, no AGENTS.md — is an honest stress test.
 
 ---
 
@@ -23,7 +23,7 @@ The skill works for any IBM team. The Stargate Data API — 90+ command resolver
 | Template | [`template/ONBOARDING.md`](template/ONBOARDING.md) | Fill-in-the-blanks template for any team |
 | Authoring Guide | [`template/AUTHORING_GUIDE.md`](template/AUTHORING_GUIDE.md) | How to write your ONBOARDING.md in 2–4 hours |
 | Reference Implementation | [`data-api/ONBOARDING.md`](data-api/ONBOARDING.md) | Fully populated for the Stargate Data API — the demo artifact |
-| Evaluation Scorecard | [`evaluation/SCORECARD.md`](evaluation/SCORECARD.md) | Three-arm evaluation: **complete** — Arm 3 avg 4.8/5, delta +1.4 ✅ |
+| Evaluation Scorecard | [`evaluation/SCORECARD.md`](evaluation/SCORECARD.md) | Three-arm evaluation: **complete** — Arm 3 avg 4.7/5, delta +1.2 (author-scored; raw outputs published for independent review) |
 | Demo Script | [`demo/SCRIPT.md`](demo/SCRIPT.md) | Shot-by-shot recording guide with voiceover script |
 
 ---
@@ -46,13 +46,15 @@ The demo runs three arms across five tasks. Evaluation is complete.
 
 | Arm | Condition | Actual avg score |
 |---|---|---|
-| 1 | Generic Bob — no skill, no source | **1.4 / 5** |
-| 2 | Bob + skill + live source, no ONBOARDING.md | **3.4 / 5** |
-| 3 | Bob + skill + ONBOARDING.md | **4.8 / 5** |
+| 1 | Generic Bob — no skill, no source | **1.3 / 5** |
+| 2 | Bob + skill + live source, no ONBOARDING.md | **3.5 / 5** |
+| 3 | Bob + skill + ONBOARDING.md | **4.7 / 5** |
 
-**Delta (Arm 2 → Arm 3): +1.4** ✅ · **Arm 3 avg: 4.8 / 5.0** ✅ — both success criteria met.
+**Delta (Arm 2 → Arm 3): +1.2** · **Arm 3 avg: 4.7 / 5.0** — both stated success criteria met.
 
-The sharpest result was **T4** (design-intent gotcha): Arm 2 actively recommended sharing collection/table logic (score 1.3 — the worst possible answer); Arm 3 cleanly refused with the precise failure modes from ONBOARDING.md Section 7 (score 5.0). This is the case the ONBOARDING.md uniquely enables: source alone is insufficient; you need the authored rationale.
+> ⚠️ **Provenance note:** scores were assigned by the submission author against pre-written rubric criteria, not by independent judges. The raw outputs for all five tasks across all three arms are committed at [`evaluation/SCORECARD.md`](evaluation/SCORECARD.md) and can be re-scored blind by any reader.
+
+The sharpest result was **T4** (design-intent gotcha): Arm 2 actively recommended sharing collection/table logic; Arm 3 cleanly refused with the precise failure modes from ONBOARDING.md Section 7. This is the case the ONBOARDING.md uniquely enables: source alone is insufficient; you need the authored rationale.
 
 **The refusal clip:** the demo also shows Bob correcting a deliberately stale claim planted in the ONBOARDING.md — citing the source file that contradicts it. Almost nobody demos a confident, evidenced *"no"*.
 
