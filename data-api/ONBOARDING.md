@@ -34,7 +34,7 @@ The codebase is organized into five layers, outermost first:
 
 ---
 
-## 3 — Request Lifecycle
+## 3 — Execution Lifecycle
 
 **Representative request:** `findOne` against a collection
 
