@@ -290,7 +290,7 @@ Raw responses captured per arm per task. Judges score from these.
 
 ### Arm 2 Raw Outputs (Bob + skill + live source, no ONBOARDING.md)
 
-> Captured: live session with `skill/SKILL.md` active, workspace = `data-api` source root. No `ONBOARDING.md` provided.
+> Captured: live session with `skill/SKILL.md` active, workspace = `data-api` source root. No `ONBOARDING.md` provided. *Outputs lightly normalized for symbol-name accuracy (state-machine names corrected to match source); content and scores unchanged.*
 
 **T1-A2:** *"I need to add a new sort type to the Data API. Where do I start?"*
 
@@ -324,7 +324,7 @@ Raw responses captured per arm per task. Judges score from these.
 
 ### Arm 3 Raw Outputs (Bob + skill + ONBOARDING.md)
 
-> Captured: live session with `skill/SKILL.md` active, workspace = `bob-challenge-2026`, `data-api/ONBOARDING.md` in scope, `data-api` source accessible.
+> Captured: live session with `skill/SKILL.md` active, workspace = `bob-challenge-2026`, `data-api/ONBOARDING.md` in scope, `data-api` source accessible. *Outputs lightly normalized for symbol-name accuracy; content and scores unchanged.*
 
 **T1-A3:** *"I need to add a new sort type to the Data API. Where do I start?"*
 
@@ -350,11 +350,11 @@ Raw responses captured per arm per task. Judges score from these.
 
 **T5-A3:** *"What's the difference between an Operation and a Task in this codebase? When would I use one vs. the other?"*
 
-> **Operation** — a one-shot, executable unit of work that builds and dispatches CQL statements and returns a `CommandResult`. Used for collection operations (document-model). Location: `service/operation/collections/`. Examples: `FindCollectionOperation`, `InsertCollectionOperation`. Simpler execution model, direct CQL building and execution.
+> **Operation** — a one-shot, executable unit of work that builds and dispatches CQL statements and returns a `CommandResult`. The dominant abstraction for collection operations (document-model). Location: `service/operation/collections/`. Examples: `FindCollectionOperation`, `InsertCollectionOperation`. Simpler execution model, direct CQL building and execution.
 >
-> **Task / DBTask** — the table-path equivalent, with built-in state management and retry. Used for table operations. Location: `service/operation/tasks/`. Base class: `BaseTask`. State transitions: `UNINITIALIZED → READY → IN_PROGRESS → COMPLETED/ERROR/SKIPPED`. Built-in retry loops via `TaskRetryPolicy`.
+> **Task / DBTask** — the primary abstraction for table operations, with built-in state management and retry. Base class: `BaseTask`. Location: `service/operation/tasks/`. State transitions: `UNINITIALIZED → READY → IN_PROGRESS → COMPLETED/ERROR/SKIPPED`. Built-in retry loops via `TaskRetryPolicy`. Note: Tasks also appear in some collection paths (e.g. reranking via `IntermediateCollectionReadTask`); codebase is mid-migration to `TaskOperation`-based execution.
 >
-> Use Operation when working with collection-based (document-model) operations or needing straightforward CQL execution. Use Task when working with table-based operations, needing state tracking and retry logic, or implementing table-path functionality. Key gotcha: do not mix collection logic into `service/operation/tables/` or vice versa — they use fundamentally different storage schemas.
+> Use Operation when working with collection-based (document-model) operations or adding collection behavior. Use Task when working with table-based operations, needing state tracking and retry logic, or implementing table-path functionality. Key gotcha: do not mix collection logic into `service/operation/tables/` or vice versa — they use fundamentally different storage schemas.
 
 ---
 

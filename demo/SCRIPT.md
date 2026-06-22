@@ -75,7 +75,7 @@ Wait for the response. Bob will recommend sharing, mention the base `Operation<S
 
 - Open a fresh Bob session with the codebase-mentor skill active and `data-api/ONBOARDING.md` in scope.
 - Have the `data-api` source readable.
-- Confirm the planted stale claim is present (Section 3, the blockquote after the `<!-- PLANTED_STALE_CLAIM -->` comment).
+- Confirm the inaccurate sort-validation claim is present in Section 3 of `data-api/ONBOARDING.md` (the blockquote beginning "According to the API documentation, sort options are validated...").
 
 ### Shot sequence
 
