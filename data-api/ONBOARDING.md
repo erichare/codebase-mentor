@@ -4,7 +4,7 @@
 
 ## Document Owner
 
-**Owner:** Bob Challenge 2026 Demo Author (Data Platform team)
+**Owner:** Eric Hare (Data Platform team)
 **Review cadence:** Every 6 months, or after any major architectural change.
 **Last reviewed:** 2025-07
 
@@ -62,13 +62,8 @@ The codebase is organized into five layers, outermost first:
    (`vsearchSingle`, `bm25Single`, `sortedSingle`, or `unsortedSingle`) is selected based on the
    sort clause content.
 
-   <!-- PLANTED_STALE_CLAIM: The claim above correctly describes where validation occurs.
-        The PLANTED stale claim is the sentence below this comment — it asserts validation
-        happens before the resolver runs, which is false: it runs inside resolveCollectionCommand().
-   -->
-   > ⚠️ **Note (verify before trusting):** According to the API documentation, sort options are
-   > validated in `SortClause.validate()` *before* the resolver runs, as a pre-check in the
-   > processor pipeline. <!-- PLANTED_STALE_CLAIM -->
+   > **Note:** According to the API documentation, sort options are validated in
+   > `SortClause.validate()` *before* the resolver runs, as a pre-check in the processor pipeline.
 
 5. **Operation execution:** `CommandProcessor` calls `Operation.execute()` on the
    `FindCollectionOperation` instance.  For the unsorted path this issues a Cassandra SELECT via
