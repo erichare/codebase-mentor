@@ -1,6 +1,6 @@
 # ONBOARDING.md Authoring Guide
 
-This guide walks you through each of the seven sections in `template/ONBOARDING.md`. For every section it explains what to write, how detailed to be, and gives a short worked example drawn from the Stargate Data API — a real IBM-adjacent codebase with 90+ command resolvers, a five-layer request pipeline, and no prior ONBOARDING.md.
+This guide walks you through each of the seven sections in `template/ONBOARDING.md`. For every section it explains what to write, how detailed to be, and gives a short worked example drawn from the Stargate Data API — a real IBM-adjacent codebase with 39 concrete command resolvers, a five-layer request pipeline, and no prior ONBOARDING.md.
 
 **Time budget:** most teams complete a first draft in 2–4 hours. See the break-even framing below.
 
@@ -82,7 +82,7 @@ Last reviewed: 2025-01
 | Task / DBTask | Builds and issues the CQL statement | `DBTask` |
 | Cassandra driver | Executes CQL against the cluster | (driver boundary) |
 
-Note that `CommandResolver` is an interface; `FindOneCommandResolver` is one of 90+ concrete implementations. The layer map names the interface because that's the contract — implementations are details.
+Note that `CommandResolver` is an interface; `FindOneCommandResolver` is one of 39 concrete `*CommandResolver` implementations. The layer map names the interface because that's the contract — implementations are details.
 
 ---
 
@@ -118,7 +118,7 @@ Note that `CommandResolver` is an interface; `FindOneCommandResolver` is one of 
 | Term | Definition |
 |---|---|
 | **Shredding** | The process of decomposing an incoming JSON document into a flat row structure for Cassandra storage. Runs only on insert, collection-only. Key classes: `DocumentShredder`, `WritableShreddedDocument`. |
-| **Resolver** | A class implementing `CommandResolver<C>` that maps an incoming `Command` to an `Operation`. There are 90+ resolvers; naming convention is `[CommandName]Resolver`. |
+| **Resolver** | A class implementing `CommandResolver<C>` that maps an incoming `Command` to an `Operation`. There are 39 concrete `*CommandResolver` implementations; naming convention is `[CommandName]Resolver`. |
 | **Collection** | A document-model namespace. Predates tables in this codebase; uses in-memory sorting via `ChainedComparator` rather than CQL `ORDER BY`. |
 | **Table** | A table-model namespace introduced later. Uses real CQL `ORDER BY` via `*CqlClause` classes. |
 | **Task / DBTask** | A unit of CQL work. Has its own retry policy (`TaskRetryPolicy`) separate from the driver-level retry policy. |
@@ -155,7 +155,7 @@ Note that `CommandResolver` is an interface; `FindOneCommandResolver` is one of 
 
 **What it is:** a lookup table mapping common questions to the one or two classes that best answer them.
 
-**Why it matters:** large codebases have hundreds of classes. A new engineer running a text search for "sort" in the Data API will get dozens of hits across the 90+ resolver files. This section cuts the noise: "for questions about sort dispatch, start at `SortClauseUtil`."
+**Why it matters:** large codebases have hundreds of classes. A new engineer running a text search for "sort" in the Data API will get dozens of hits across the resolver files. This section cuts the noise: "for questions about sort dispatch, start at `SortClauseUtil`."
 
 **How detailed to be:** one entry per question type. Name only the best entry point — not every class that touches the concept. If you feel the need to list five classes for one question, that is a sign the answer is "it's complicated" and belongs in Section 7 (Known Gotchas) instead.
 
