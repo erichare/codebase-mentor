@@ -146,7 +146,7 @@ If a method is long and the relevant logic is in a specific sub-section, name th
 
    | Section | Claim summary | Status | Evidence |
    |---|---|---|---|
-   | Request Lifecycle | "sort validation runs in SortClause.validate() before the resolver" | ⚠️ Stale | Source: `FindOneCommandResolver.resolveCollectionCommand()` calls `sortClause.validate()` inside the resolver, not before it |
+   | Execution Lifecycle | "sort validation runs in SortClause.validate() before the resolver" | ⚠️ Stale | Source: `FindOneCommandResolver.resolveCollectionCommand()` calls `sortClause.validate()` inside the resolver, not before it |
    | ... | ... | ... | ... |
 
    ### All-Clear Items

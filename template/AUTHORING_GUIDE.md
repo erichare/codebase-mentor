@@ -109,7 +109,7 @@ Note that for a pipeline, the "layers" are execution stages rather than request-
 
 **Why it matters:** a layer map shows structure; the execution lifecycle shows motion. Together they answer "what is this system made of?" and "how does it actually run?". New engineers cannot contribute confidently until they can trace a unit of work from entry to completion.
 
-**How detailed to be:** trace one representative case end to end. Name the method at each hop — not "the resolver" but "`FindOneCommandResolver.resolveCollectionCommand()`". A reader should be able to follow the trace in their IDE using nothing but the names you provide. For a pipeline codebase, "entry" is the job trigger or the first method that runs when a record is consumed.
+**How detailed to be:** trace one representative case end to end. Name the method at each hop — not "the resolver" but "`FindOneCommandResolver.resolveCollectionCommand()`". A reader should be able to follow the trace in their IDE using nothing but the names you provide. For a pipeline codebase, "entry" is the job trigger or the first method that runs when a record is consumed. For a **library**, there is no job entry point — trace a typical caller's use of the primary public API instead (e.g., "caller constructs `Client`, calls `Client.submit()`, which invokes `RequestQueue.enqueue()`, which…").
 
 **Worked example (Stargate Data API — `findOne` request):**
 
