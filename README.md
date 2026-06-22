@@ -11,7 +11,7 @@ A reusable Bob skill that turns any IBM codebase with a short `ONBOARDING.md` in
 
 On the Stargate Data API team, a new engineer's first real architecture question typically costs 30–60 minutes of senior-engineer interrupt time. With three to five such events per onboarding and a 2–4 hour one-time authoring investment, the break-even is one to two new hires. After that it compounds: every subsequent hire, every cross-team contributor, every on-call engineer in unfamiliar code.
 
-The skill works for any IBM team. The Stargate Data API — 39 concrete command resolvers, a five-layer request pipeline, a custom task-retry framework, no AGENTS.md — is an honest stress test.
+The skill works for any IBM team with a codebase and a short ONBOARDING.md — request/response services, batch pipelines, stream processors, libraries. The Stargate Data API — 39 concrete command resolvers, a five-layer request pipeline, a custom task-retry framework, no AGENTS.md — is an honest stress test.
 
 ---
 

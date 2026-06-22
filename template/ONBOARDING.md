@@ -58,13 +58,14 @@ The codebase is organized into the following layers, outermost first:
 
 ---
 
-## 3 — Request Lifecycle
+## 3 — Execution Lifecycle
 
-<!-- TODO: Trace one representative request from entry point to response.
+<!-- TODO: Trace one representative execution path (request, job run, batch) from entry to completion.
      Name the method and class at each hop. Do NOT paraphrase the code — name it.
-     A new engineer should be able to follow this walkthrough and find each step in source. -->
+     A new engineer should be able to follow this walkthrough and find each step in source.
+     For a pipeline/job-based codebase, trace one full job run or one record through the stages. -->
 
-**Representative request:** [OPERATION NAME — e.g., "findOne", "POST /items", "processOrder"]
+**Representative execution:** [OPERATION NAME — e.g., "findOne", "daily sync run", "POST /items", "processOrder"]
 
 1. **Entry:** `[EntryClass].[entryMethod]()` receives the request and [WHAT HAPPENS HERE].
 2. **[LAYER NAME]:** `[ClassName].[methodName]()` [WHAT HAPPENS — one clause].
