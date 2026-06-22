@@ -46,7 +46,7 @@ The demo runs three arms across five tasks. Evaluation is complete.
 
 | Arm | Condition | Actual avg score |
 |---|---|---|
-| 1 | Generic Bob — no skill, no source | **1.4 / 5** |
+| 1 | Generic Bob — no skill, no source | **1.3 / 5** |
 | 2 | Bob + skill + live source, no ONBOARDING.md | **3.4 / 5** |
 | 3 | Bob + skill + ONBOARDING.md | **4.8 / 5** |
 
