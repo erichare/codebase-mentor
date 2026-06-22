@@ -142,7 +142,7 @@ Create the evaluation scorecard file with the three pre-specified tasks (T1–T3
 
 ## Sub-Task 5 — README as Live Status Dashboard
 
-**Status:** `[ ] pending`
+**Status:** `[x] done`
 
 ### Intent
 Replace the minimal README.md with a submission-quality README that serves as both the public face of the repo and a live progress dashboard. It links to the proposal artifact, summarizes the submission, and shows current task status updated after each sub-task completes.
@@ -154,12 +154,12 @@ Replace the minimal README.md with a submission-quality README that serves as bo
 - The proposal summary in the README matches the final HTML artifact
 
 ### Todo List
-- [ ] Write the project title, one-paragraph pitch, and break-even framing
-- [ ] Write the "what's in this repo" section with links to each deliverable file
-- [ ] Write the status table with one row per sub-task, checkboxes updated as work completes
-- [ ] Add the before/after demo description (three-arm structure, refusal clip)
-- [ ] Add a "how to install the skill" quick-start section for IBM teams who want to adopt it
-- [ ] Add a "evaluation" section summarizing the plan and linking to the scorecard
+- [x] Write the project title, one-paragraph pitch, and break-even framing
+- [x] Write the "what's in this repo" section with links to each deliverable file
+- [x] Write the status table with one row per sub-task, checkboxes updated as work completes
+- [x] Add the before/after demo description (three-arm structure, refusal clip)
+- [x] Add a "how to install the skill" quick-start section for IBM teams who want to adopt it
+- [x] Add a "evaluation" section summarizing the plan and linking to the scorecard
 
 ---
 
@@ -172,4 +172,4 @@ Replace the minimal README.md with a submission-quality README that serves as bo
 | `template/AUTHORING_GUIDE.md` | 2 | `[x] done` |
 | `data-api/ONBOARDING.md` | 3 | `[x] done` |
 | `evaluation/SCORECARD.md` | 4 | `[x] done` |
-| `README.md` | 5 | `[ ] pending` |
+| `README.md` | 5 | `[x] done` |

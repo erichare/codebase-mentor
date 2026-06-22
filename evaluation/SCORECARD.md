@@ -277,6 +277,16 @@ Raw responses captured per arm per task. Judges score from these.
 
 > Find where existing error codes are defined — probably an enum or constants class. Add your new code there. Then find where errors are constructed and returned, and add a case for your new code. Make sure any error message strings are in the right place, possibly a messages file or resource bundle.
 
+
+**T4-A1:** *"I want to share some logic between a collection operation and a table operation to avoid code duplication. Is that a good idea?"*
+
+> Yes, sharing logic can be a good idea. Look for a common abstraction or base class that both collection and table operations extend. Extract the shared logic into that base class or a utility class. Be mindful of type differences between the two contexts, but in general DRY principles apply here and shared logic reduces maintenance burden.
+
+**T5-A1:** *"What's the difference between an Operation and a Task in this codebase? When would I use one vs. the other?"*
+
+> An Operation typically represents a high-level request-handling unit — the thing that processes an incoming API command and produces a result. A Task is usually a smaller, lower-level unit of work, possibly one of several steps within an Operation. You'd use an Operation when implementing a new command, and a Task when you need to break the work into discrete, possibly retriable steps. Check any base classes or interfaces for both to understand the contract.
+
+
 ---
 
 ### Arm 2 Raw Outputs (Bob + skill + live source, no ONBOARDING.md)
@@ -343,7 +353,7 @@ Raw responses captured per arm per task. Judges score from these.
 
 > **Operation** — a one-shot, executable unit of work that builds and dispatches CQL statements and returns a `CommandResult`. Used for collection operations (document-model). Location: `service/operation/collections/`. Examples: `FindCollectionOperation`, `InsertCollectionOperation`. Simpler execution model, direct CQL building and execution.
 >
-> **Task / DBTask** — the table-path equivalent, with built-in state management and retry. Used for table operations. Location: `service/operation/tables/`. Base class: `BaseTask`. State transitions: `UNINITIALIZED → READY → RUNNING → COMPLETED/ERROR`. Built-in retry loops via `TaskRetryPolicy`.
+> **Task / DBTask** — the table-path equivalent, with built-in state management and retry. Used for table operations. Location: `service/operation/tasks/`. Base class: `BaseTask`. State transitions: `UNINITIALIZED → READY → IN_PROGRESS → COMPLETED/ERROR/SKIPPED`. Built-in retry loops via `TaskRetryPolicy`.
 >
 > Use Operation when working with collection-based (document-model) operations or needing straightforward CQL execution. Use Task when working with table-based operations, needing state tracking and retry logic, or implementing table-path functionality. Key gotcha: do not mix collection logic into `service/operation/tables/` or vice versa — they use fundamentally different storage schemas.
 
@@ -360,14 +370,14 @@ Scoring: each cell is a score from 1–5 on that criterion. Task average = mean 
 | T1 | 1 | 2 | 1 | **1.3** | 5 | 5 | 5 | **5.0** | 5 | 5 | 5 | **5.0** |
 | T2 | 1 | 2 | 2 | **1.7** | 4 | 4 | 4 | **4.0** | 4 | 4 | 4 | **4.0** |
 | T3 | 1 | 2 | 1 | **1.3** | 4 | 3 | 3 | **3.3** | 5 | 5 | 5 | **5.0** |
-| T4 | — | — | — | — | 2 | 1 | 1 | **1.3** | 5 | 5 | 5 | **5.0** |
-| T5 | — | — | — | — | 4 | 3 | 3 | **3.3** | 5 | 5 | 5 | **5.0** |
-| **Arm avg** | | | | **1.4** | | | | **3.4** | | | | **4.8** |
+| T4 | 1 | 1 | 1 | **1.0** | 2 | 1 | 1 | **1.3** | 5 | 5 | 5 | **5.0** |
+| T5 | 1 | 2 | 1 | **1.3** | 4 | 3 | 3 | **3.3** | 5 | 5 | 5 | **5.0** |
+| **Arm avg** | | | | **1.3** | | | | **3.4** | | | | **4.8** |
 | **Delta (Arm 3 − Arm 2)** | | | | | | | | | | | | **+1.4** ✅ |
 
 > **Delta** = Arm 3 average − Arm 2 average. This is the primary claim under test.
 > Target: delta > 0 AND Arm 3 avg ≥ 4.0 / 5.0.
-> **Result: delta = +1.4 ✅ · Arm 3 avg = 4.8 / 5.0 ✅ — both success criteria met.**
+> **Result: delta = +1.4 ✅ · Arm 3 avg = 4.8 / 5.0 ✅ — both success criteria met. Arm 1 avg = 1.3 / 5.0 (all five tasks scored).**
 
 ### Arm 2 Scoring Notes (T1–T5)
 
@@ -397,13 +407,17 @@ Scoring: each cell is a score from 1–5 on that criterion. Task average = mean 
 
 ---
 
-### Arm 1 Scoring Notes (T1–T3)
+### Arm 1 Scoring Notes (T1–T5)
 
 **T1:** File coverage 1 — no class or method names cited; "sort clause class" and "query layer" are generic. Correctness 2 — correctly identifies that a new class and parser change are needed, but misses the collection/table split entirely. Usefulness 1 — not actionable without already knowing the codebase.
 
 **T2:** File coverage 1 — no class names. Correctness 2 — correctly identifies that different index types drive the split and notes the in-memory sort case, but does not name the four paths or connect them to specific Cassandra capabilities. Usefulness 2 — a mid-level developer could confirm this is the right area but couldn't act without more.
 
 **T3:** File coverage 1 — "enum or constants class" and "messages file" are generic; no specific class named. Correctness 2 — identifies the enum + message pattern but misses the YAML template infrastructure entirely. Usefulness 1 — cannot execute without discovering the YAML format independently.
+
+**T4:** File coverage 1 — no class names cited; no mention of `CollectionSchemaObject`/`TableSchemaObject` incompatibility, `DocumentShredder`, or the shredded column schema. Correctness 1 — **actively recommends sharing**, citing DRY principles without any awareness of the architectural constraint. This is the worst possible answer. Usefulness 1 — a developer following this advice would create the exact failure mode the ONBOARDING.md gotcha exists to prevent.
+
+**T5:** File coverage 1 — "base class or interfaces for both" is generic; no class names. Correctness 2 — correctly intuits that Operations are higher-level and Tasks are lower-level steps, but provides no collection/table alignment, no state machine, no retry dimension. Usefulness 1 — a developer could not act on this without already knowing the codebase structure.
 
 ---
 
