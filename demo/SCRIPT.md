@@ -14,8 +14,18 @@ Before you hit record on any clip:
 - [ ] `data-api` source clone is accessible at the path Bob can read
 - [ ] `skill/SKILL.md` is installed at `~/.claude/skills/codebase-mentor/SKILL.md`
 - [ ] `data-api/ONBOARDING.md` is in scope for Clips 2 and 3 (place it at the root of the session's working directory, or point Bob to it explicitly)
-- [ ] The planted stale claim is still in `data-api/ONBOARDING.md` Section 3 — verify the `<!-- PLANTED_STALE_CLAIM -->` comment is present before recording Clip 2
+- [ ] Verify Section 3 of `data-api/ONBOARDING.md` contains the deliberately inaccurate sort-validation claim (the blockquote after the main lifecycle description) — needed for the Clip 2 refusal scene
 - [ ] Microphone level tested; no background noise
+
+## Recording-day fallback envelope
+
+Bob's responses are non-deterministic. If a clip does not produce the expected verdict on the first take:
+
+**Clip 2 (the refusal):** If Bob confirms the stale claim rather than refuting it, prompt: *"Please check the source — specifically `FindOneCommandResolver.resolveCollectionCommand()` — and verify where `sortClause.validate()` is actually called."* This gives the skill's Reconcile mode the anchor it needs.
+
+**Clip 3 Part B (Change Guide):** If the response is a prose description rather than a numbered checklist, prompt: *"Can you give me that as an ordered checklist of files and methods to touch?"* The content will be the same; the format may differ between runs.
+
+**If a full take fails:** Re-run in a fresh session (context accumulation can suppress tool calls in long sessions). Do not patch together responses from different sessions — the source-read tool calls are the evidence trail.
 
 ---
 
@@ -172,17 +182,18 @@ If you're producing a single 5-minute video:
 2. **1:10–1:20** — Title card: "Source-Grounded Codebase Mentor — Bob Challenge 2026"
 3. **1:20–2:45** — Clip 2 (the refusal): skill + doc activated, stale claim correction
 4. **2:45–5:00** — Clip 3 Part A (T4 with doc) + Part B (Change Guide T1)
-5. **5:00–5:10** — End card: evaluation results (1.4 → 3.4 → 4.8, delta +1.4)
+5. **5:00–5:10** — End card: evaluation results (1.3 → 3.5 → 4.7, delta +1.2)
 
 ---
 
 ## End card text
 
-> **Evaluation results (5 tasks × 3 criteria × 3 arms)**  
-> Arm 1 — Generic Bob: **1.4 / 5**  
-> Arm 2 — Skill + source, no doc: **3.4 / 5**  
-> Arm 3 — Skill + source + ONBOARDING.md: **4.8 / 5**  
-> Delta (Arm 2 → Arm 3): **+1.4** ✅  
+> **Evaluation results (5 tasks × 3 criteria × 3 arms)**
+> Arm 1 — Generic Bob: **1.3 / 5**
+> Arm 2 — Skill + source, no doc: **3.5 / 5**
+> Arm 3 — Skill + source + ONBOARDING.md: **4.7 / 5**
+> Delta (Arm 2 → Arm 3): **+1.2**
+> *(Author-scored against pre-written rubric. Raw outputs at `evaluation/SCORECARD.md`.)*
 >
 > Source is the truth. ONBOARDING.md is the map.
 

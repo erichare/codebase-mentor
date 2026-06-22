@@ -38,7 +38,7 @@ The codebase is organized into five layers, outermost first:
 
 **Representative request:** `findOne` against a collection
 
-1. **HTTP entry:** `CollectionResource.executeCollectionCommand()` receives the POST body, deserializes
+1. **HTTP entry:** `CollectionResource.postCommand()` receives the POST body, deserializes
    it with Jackson into a `FindOneCommand` POJO, builds a `CommandContext` (carrying the
    `CollectionSchemaObject`, tenant, embedding provider, etc.), and forwards both to
    `MeteredCommandProcessor.processCommand()`.
@@ -87,9 +87,9 @@ The codebase is organized into five layers, outermost first:
 |---|---|
 | **Command** | An immutable POJO (no behavior) that captures a single API operation — e.g. `FindOneCommand`, `InsertOneCommand`. Behavior lives in the paired `CommandResolver`, not in the command itself. |
 | **CommandContext** | A per-request carrier that binds a `Command` to its runtime environment: `SchemaObject`, `RequestContext`, embedding provider, session cache, and feature flags. Created by `CommandContext.BuilderSupplier`. |
-| **Resolver** | A `CommandResolver<C>` implementation that maps a `Command` to the optimal `Operation`. There is one resolver class per command sub-type (40+ resolvers total). The correct resolver is located at runtime by `CommandResolverService`. |
+| **Resolver** | A `CommandResolver<C>` implementation that maps a `Command` to the optimal `Operation`. There is one resolver class per command (39 concrete `*CommandResolver` implementations in `service/resolver/`). The correct resolver is located at runtime by `CommandResolverService`. |
 | **Operation** | A one-shot, executable unit of work that builds and dispatches CQL statements and returns a `CommandResult`. Collection operations live under `service/operation/collections/`; table operations under `service/operation/tables/`. |
-| **Task / DBTask** | The table-path equivalent of an operation step. `BaseTask` manages state transitions (`UNINITIALIZED → READY → IN_PROGRESS → COMPLETED/ERROR/SKIPPED`) and retry loops via `TaskRetryPolicy`. |
+| **Task / DBTask** | A `BaseTask` subclass representing a unit of CQL work with explicit state management (`UNINITIALIZED → READY → IN_PROGRESS → COMPLETED/ERROR/SKIPPED`) and retry loops via `TaskRetryPolicy`. Tasks are the primary abstraction for table operations, but also appear in some collection paths (e.g. `IntermediateCollectionReadTask` for reranking). The codebase is mid-migration from the legacy `Operation` model to `TaskOperation`-based execution. |
 | **Shredding** | The collection-only process of decomposing a JSON document into indexable atomic entries for storage in Cassandra. Entry point is `DocumentShredder.shred()`. There is no shredding step for table operations — rows map directly to CQL columns. |
 | **SchemaObject** | The runtime representation of a target Cassandra entity. `CollectionSchemaObject` holds collection metadata (index config, vector config, id type); `TableSchemaObject` holds the CQL table descriptor. |
 | **LWT (Lightweight Transaction)** | A Cassandra conditional write (`IF NOT EXISTS` / `IF` clause) used for upserts and conflict-safe inserts. Several collection write operations use LWTs; the driver-level retry for LWTs is separate from `TaskRetryPolicy`. |

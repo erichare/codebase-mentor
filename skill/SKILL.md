@@ -49,7 +49,7 @@ If a method is long and the relevant logic is in a specific sub-section, name th
 
 2. From the relevant ONBOARDING.md section, extract one to three symbol anchors (class names, method names) that point toward the answer.
 
-3. Open each symbol in the live source. Use `FindSymbol`, `GetSymbolsOverview`, or `read_file` — whichever resolves the symbol fastest. Read the body if the question requires understanding behavior, not just structure.
+3. Open each symbol in the live source. Use the **Read** tool on the file directly, or **Grep** for the class name if the path is unknown — whichever resolves the symbol fastest. Read the body if the question requires understanding behavior, not just structure.
 
 4. If the ONBOARDING.md pointer leads to a dead end (symbol does not exist, class has been renamed, method is gone), do not guess. Declare the pointer stale and fall back to searching the source directory for a plausible replacement (see Evidence-Missing Protocol below).
 
@@ -128,7 +128,7 @@ If a method is long and the relevant logic is in a specific sub-section, name th
 
 2. Group the claims by source area (e.g., "resolver layer claims", "pipeline claims", "error handling claims").
 
-3. For each group, open the relevant source files and verify the claims. Use `GetSymbolsOverview` to check class structure efficiently before reading bodies. Read bodies only when a claim is about behavior, not just existence.
+3. For each group, open the relevant source files and verify the claims. Use **Read** on the file to check class structure efficiently before reading bodies. Read bodies only when a claim is about behavior, not just existence.
 
 4. Classify each claim:
    - ✅ **Current** — source matches the claim.
@@ -168,7 +168,7 @@ When you cannot locate source evidence for a claim you need to make, follow this
 > "I cannot find `ClassName` at the expected path. I'll search for it."
 
 **Step 2 — Search:**
-Use `FindSymbol` with the class or method name. If not found, use `grep` on the source directory for a partial match. If `ONBOARDING.md` references a path, verify the path exists.
+Use **Grep** with the class or method name across the source directory. If `ONBOARDING.md` references a path, use **Read** to verify the path exists.
 
 **Step 3a — If found under a different name or path:**
 Report the discrepancy, then proceed with the located symbol. Mark the ONBOARDING.md pointer as stale in your answer.
@@ -191,7 +191,7 @@ If `ONBOARDING.md` is not at the project root, check these locations in order:
 
 If none exist, tell the developer: "No ONBOARDING.md found. I can still answer questions from live source, but my answers will lack the rationale and gotcha context the doc would provide. Consider authoring one using the template at `template/ONBOARDING.md` in the skill repo."
 
-Proceed in source-only mode: use `GetSymbolsOverview` and `FindSymbol` to explore structure before answering, and rely on ONBOARDING.md guidance only when the file exists.
+Proceed in source-only mode: use **Read** and **Grep** to explore structure before answering, and rely on ONBOARDING.md guidance only when the file exists.
 
 ---
 

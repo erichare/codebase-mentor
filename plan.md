@@ -41,7 +41,7 @@ Write the Bob skill file that any IBM team installs once. It contains the reason
 ### Relevant Context
 - Proposal section: "What Gets Built — Bob skill"
 - Proposal accuracy contract: "Every architecture or change-guidance claim must be supported by a symbol or file read in that session"
-- The skill is modeled on the Bob skill format at `/Users/erichare/.agents/skills/`
+- The skill is modeled on the Bob skill format at `~/.agents/skills/`
 
 ---
 
@@ -79,7 +79,7 @@ Write the `ONBOARDING.md` template and a companion authoring guide that any IBM 
 **Status:** `[x] done`
 
 ### Intent
-Author the reference ONBOARDING.md for the Stargate Data API, populated entirely from live source in `/Users/erichare/GitHub/data-api`. This is both the demo artifact and the worked example of the template. It must cover the five-layer pipeline, the collection/table split rationale, shredding, the error template system, and the TaskRetryPolicy framework. All references use symbol anchors. A known-wrong stale claim is planted deliberately for the refusal demo clip.
+Author the reference ONBOARDING.md for the Stargate Data API, populated entirely from live source in the `data-api` repo. This is both the demo artifact and the worked example of the template. It must cover the five-layer pipeline, the collection/table split rationale, shredding, the error template system, and the TaskRetryPolicy framework. All references use symbol anchors. A known-wrong stale claim is planted deliberately for the refusal demo clip.
 
 ### Expected Outcomes
 - `data-api/ONBOARDING.md` exists, fully populated (no fill-in-the-blanks remaining)
@@ -99,12 +99,12 @@ Author the reference ONBOARDING.md for the Stargate Data API, populated entirely
 - [ ] Write the **high-signal files** section: one entry per common question type pointing to the right class
 - [ ] Write the **known gotchas** section: resolver class rename breaks saved flows; collection/table split; task-level vs driver-level retry; shredding is collection-only
 - [ ] Plant the stale claim in the request lifecycle section (validation order) and mark with `<!-- PLANTED_STALE_CLAIM -->`
-- [ ] Verify every class and method name against live source in `/Users/erichare/GitHub/data-api`
+- [ ] Verify every class and method name against live source in the `data-api` repo
 
 ### Relevant Context
-- Live source root: `/Users/erichare/GitHub/data-api/src/main/java/io/stargate/sgv2/jsonapi/`
+- Live source root: `io/stargate/sgv2/jsonapi/` (standard Stargate package layout)
 - Key files already read: `FindOneCommandResolver.java`, `CommandResolver.java`, `MeteredCommandProcessor.java`, `TaskRetryPolicy.java`, `BaseTask.java`, `CollectionCommandTools.java` (MCP), `DocumentShredder.java` (shredding)
-- Verified facts: `sortClause.validate()` is at line 72 of `FindOneCommandResolver`; sort dispatch is inside `resolveCollectionCommand()`; there are 90+ resolver files; there is no AGENTS.md in the data-api repo
+- Verified facts: `sortClause.validate()` is at line 72 of `FindOneCommandResolver`; sort dispatch is inside `resolveCollectionCommand()`; there are 39 concrete `*CommandResolver` implementations; there is no AGENTS.md in the data-api repo
 - Planted stale claim: "sort options are validated in `SortClause.validate()` before the resolver runs" — truth is it runs inside `resolveCollectionCommand()` at line 72
 
 ---
