@@ -24,6 +24,7 @@ The skill works for any IBM team. The Stargate Data API — 90+ command resolver
 | Authoring Guide | [`template/AUTHORING_GUIDE.md`](template/AUTHORING_GUIDE.md) | How to write your ONBOARDING.md in 2–4 hours |
 | Reference Implementation | [`data-api/ONBOARDING.md`](data-api/ONBOARDING.md) | Fully populated for the Stargate Data API — the demo artifact |
 | Evaluation Scorecard | [`evaluation/SCORECARD.md`](evaluation/SCORECARD.md) | Three-arm evaluation: **complete** — Arm 3 avg 4.8/5, delta +1.4 ✅ |
+| Demo Script | [`demo/SCRIPT.md`](demo/SCRIPT.md) | Shot-by-shot recording guide with voiceover script |
 
 ---
 
