@@ -25,6 +25,7 @@ The skill works for any IBM team with a codebase and a short ONBOARDING.md — r
 | Reference Implementation | [`data-api/ONBOARDING.md`](data-api/ONBOARDING.md) | Fully populated for the Stargate Data API — the demo artifact |
 | Evaluation Scorecard | [`evaluation/SCORECARD.md`](evaluation/SCORECARD.md) | Three-arm evaluation: **complete** — Arm 3 avg 4.7/5, delta +1.2 (author-scored; raw outputs published for independent review) |
 | Demo Script | [`demo/SCRIPT.md`](demo/SCRIPT.md) | Shot-by-shot recording guide with voiceover script |
+| Additional ONBOARDING.md files | [`onboarding/`](onboarding/) | Synced copies for astrapy, langflow, and stargate-jsonapi — edit here, copy to repo root |
 
 ---
 
