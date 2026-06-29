@@ -1,4 +1,4 @@
-# Bob Challenge 2026 — Source-Grounded Codebase Mentor
+# Source-Grounded Codebase Mentor
 
 A reusable Bob skill that turns any IBM codebase with a short `ONBOARDING.md` into an interactive codebase mentor — answering architecture questions and guiding change tasks from current source, with evidence or an explicit admission of ignorance.
 
