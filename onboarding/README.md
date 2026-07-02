@@ -44,15 +44,16 @@ rsync -av --update onboarding/astrapy/ONBOARDING.md ~/GitHub/astrapy/ONBOARDING.
 rsync -av --update onboarding/langflow/ONBOARDING.md ~/GitHub/langflow/ONBOARDING.md
 ```
 
-## Template sync (maintainers)
+## Template and adapter sync (maintainers)
 
-The canonical template lives in [`../template/`](../template/). The plugin bundles copies at
-`skills/codebase-mentor/ONBOARDING.template.md` and `skills/codebase-mentor/AUTHORING_GUIDE.md`
-so installed users have them offline. After editing the template, refresh the bundled copies:
+The canonical sources are [`../template/`](../template/) (authoring kit) and
+[`../core/`](../core/) (mentor protocol, full + compact). Everything derived from them —
+the bundled copies in `skills/codebase-mentor/`, the SKILL.md protocol body, and all
+`adapters/` files — is generated. After editing a canonical source, regenerate:
 
 ```bash
-cp template/ONBOARDING.md skills/codebase-mentor/ONBOARDING.template.md
-cp template/AUTHORING_GUIDE.md skills/codebase-mentor/AUTHORING_GUIDE.md
+scripts/sync-adapters.sh          # rewrite all generated files
+scripts/sync-adapters.sh --check  # CI drift gate (exit 1 if out of date)
 ```
 
 ## Adding a new repo
