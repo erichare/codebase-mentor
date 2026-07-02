@@ -9,7 +9,7 @@
       "name": "codebase-mentor",
       "source": "./",
       "description": "Source-grounded codebase mentor for any repo with an ONBOARDING.md — every claim backed by a symbol or file read in that session.",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "displayName": "Codebase Mentor"
     }
   ]
