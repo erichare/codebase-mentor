@@ -49,7 +49,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # If run from inside a checkout of the repo, copy locally; otherwise fetch from GitHub.
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || true)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)" || SCRIPT_DIR=""
 LOCAL_SRC=""
 if [[ -n "${SCRIPT_DIR}" && -f "${SCRIPT_DIR}/skills/codebase-mentor/SKILL.md" ]]; then
   LOCAL_SRC="${SCRIPT_DIR}"
