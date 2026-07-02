@@ -6,5 +6,6 @@
     "name": "Eric Hare"
   },
   "homepage": "https://github.com/erichare/codebase-mentor",
-  "repository": "https://github.com/erichare/codebase-mentor"
+  "repository": "https://github.com/erichare/codebase-mentor",
+  "license": "MIT"
 }

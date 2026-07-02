@@ -1,0 +1,33 @@
+name: Adapter request
+description: Request support for another AI coding agent
+labels: [adapter, enhancement]
+body:
+  - type: input
+    id: agent
+    attributes:
+      label: Agent name
+    validations:
+      required: true
+  - type: input
+    id: docs
+    attributes:
+      label: Link to the agent's instructions/rules format docs
+      description: Where is the agent's custom-instructions or skills mechanism documented?
+    validations:
+      required: true
+  - type: dropdown
+    id: mechanism
+    attributes:
+      label: Which mechanism does it support?
+      options:
+        - SKILL.md (open skills format)
+        - AGENTS.md
+        - Its own rules/instructions file format
+        - Unsure
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else?
+      description: Willing to contribute the adapter yourself? See CONTRIBUTING.md — it's a ~5-line addition to sync-adapters.sh plus an install case.
