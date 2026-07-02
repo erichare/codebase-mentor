@@ -12,7 +12,7 @@ Before you hit record on any clip:
 - [ ] Bob session is **fresh** (no prior conversation in context)
 - [ ] Terminal font size ≥ 16pt, line width ~110 chars — readable at 1080p
 - [ ] `data-api` source clone is accessible at the path Bob can read
-- [ ] `skill/SKILL.md` is installed at `~/.claude/skills/codebase-mentor/SKILL.md`
+- [ ] `skills/codebase-mentor/SKILL.md` is installed at `~/.claude/skills/codebase-mentor/SKILL.md`
 - [ ] `data-api/ONBOARDING.md` is in scope for Clips 2 and 3 (place it at the root of the session's working directory, or point Bob to it explicitly)
 - [ ] Verify Section 3 of `data-api/ONBOARDING.md` contains the deliberately inaccurate sort-validation claim (the blockquote after the main lifecycle description) — needed for the Clip 2 refusal scene
 - [ ] Microphone level tested; no background noise
