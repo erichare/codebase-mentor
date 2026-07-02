@@ -1,0 +1,37 @@
+name: Bug report
+description: Something broken in the skills, adapters, installer, or workflows
+labels: [bug]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - codebase-mentor skill
+        - onboard skill
+        - install.sh / sync-adapters.sh
+        - Adapter (Cursor / Copilot / AGENTS.md)
+        - Plugin / marketplace packaging
+        - GitHub Actions workflow
+        - Docs
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent and version
+      placeholder: e.g. Claude Code 2.x, Codex CLI, Cursor
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what happened instead? Include the exact prompt/command where relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Output / logs
+      render: text
