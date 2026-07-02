@@ -1,0 +1,53 @@
+# One-time maintenance: rewrite history to remove AI-attribution trailers
+# from all commit messages, move the v1.1.0 tag to the rewritten history,
+# and delete this workflow. Run manually from the Actions tab; safe to
+# delete after use if the self-removal step was skipped.
+name: Scrub attribution
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scrub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Rewrite commit messages
+        run: |
+          FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f \
+            --msg-filter "sed -e '/^Co-[Aa]uthored-[Bb]y: Claude/d' \
+                              -e '/^Claude-Session:/d' \
+                              -e '/Generated with \\[Claude Code\\]/d' \
+                              -e '/^https:\\/\\/claude\\.ai\\/code\\/session/d'" \
+            --tag-name-filter cat -- --branches --tags
+
+      - name: Verify no attribution remains
+        run: |
+          if git log --format=%B main | grep -inE 'co-authored-by: claude|claude-session|claude\.ai/code/session'; then
+            echo "Attribution still present after rewrite" >&2
+            exit 1
+          fi
+          echo "History clean."
+
+      - name: Remove this workflow, push rewritten refs, fix release target
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout main
+          git rm -q .github/workflows/scrub-attribution.yml
+          git commit -q -m "Remove one-time attribution-scrub workflow"
+          git push --force origin main
+          git push --force origin "refs/tags/v1.1.0:refs/tags/v1.1.0"
+          NEW_TAG_SHA="$(git rev-parse 'v1.1.0^{commit}')"
+          RELEASE_ID="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/v1.1.0" --jq .id)"
+          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" \
+            -f target_commitish="$NEW_TAG_SHA" >/dev/null \
+            || echo "::warning::could not update release target_commitish"
