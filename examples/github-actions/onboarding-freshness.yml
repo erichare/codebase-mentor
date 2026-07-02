@@ -1,0 +1,55 @@
+# ONBOARDING.md freshness scan — copy this file into your repo's .github/workflows/
+#
+# Runs the codebase-mentor Mode 4 freshness scan on a weekly schedule (and on
+# demand via the Actions tab). If any ONBOARDING.md claim has drifted from
+# current source, Claude opens — or updates — a GitHub issue with the scan report.
+#
+# Setup:
+#   1. Add an ANTHROPIC_API_KEY secret to your repo (Settings → Secrets → Actions).
+#   2. Commit this file as .github/workflows/onboarding-freshness.yml.
+# The default GITHUB_TOKEN plus the `issues: write` permission below is all the
+# GitHub access it needs.
+
+name: ONBOARDING.md Freshness Scan
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # every Monday 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  freshness-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          plugin_marketplaces: |
+            https://github.com/erichare/codebase-mentor.git
+          plugins: |
+            codebase-mentor@codebase-mentor
+          prompt: |
+            Run the codebase-mentor skill's Mode 4 freshness scan against this
+            repo's ONBOARDING.md: extract every structural claim, verify each
+            against current source, and produce the scan report table
+            (✅ Current / ⚠️ Stale / ❓ Unverifiable) with recommended updates.
+
+            If ONBOARDING.md does not exist, do nothing and exit.
+
+            If every claim is ✅ Current, do not open an issue. If an open issue
+            titled "ONBOARDING.md freshness scan: drift detected" exists, close it
+            with a comment noting the scan came back clean.
+
+            If any claim is ⚠️ Stale, search open issues for one titled
+            "ONBOARDING.md freshness scan: drift detected". If it exists, replace
+            its body with the new scan report; otherwise create it with that title
+            and the scan report as the body. Use `gh issue` commands.
+          claude_args: |
+            --allowedTools "Bash(gh issue:*)"
+            --max-turns 30

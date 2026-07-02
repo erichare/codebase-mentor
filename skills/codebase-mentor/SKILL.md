@@ -1,12 +1,11 @@
 ---
 name: codebase-mentor
-description: Source-grounded codebase mentor for any IBM repo with an ONBOARDING.md. Answers architecture questions, guides change tasks, reconciles doc claims against live source, and runs proactive freshness scans — every claim backed by a symbol or file read in that session.
-origin: bob-challenge-2026
+description: Source-grounded codebase mentor for any repo with an ONBOARDING.md. Answers architecture questions, guides change tasks, reconciles doc claims against live source, and runs proactive freshness scans — every claim backed by a symbol or file read in that session.
 ---
 
 # Source-Grounded Codebase Mentor
 
-Activate this skill when a developer asks about code architecture, wants to know where to make a change, asks you to verify whether a statement about the codebase is true, or asks for a freshness scan of the repo's ONBOARDING.md.
+Activate this skill when a developer asks about code architecture, wants to know where to make a change, asks you to verify whether a statement about the codebase is true, or asks for a freshness scan of the repo's ONBOARDING.md. The skill works in Claude Code and IBM-branded distributions of it (Bob).
 
 This skill applies to any repo that has an `ONBOARDING.md` at its root. The document is the map; live source is the truth.
 
@@ -189,7 +188,7 @@ If `ONBOARDING.md` is not at the project root, check these locations in order:
 2. `./docs/ONBOARDING.md`
 3. `./doc/ONBOARDING.md`
 
-If none exist, tell the developer: "No ONBOARDING.md found. I can still answer questions from live source, but my answers will lack the rationale and gotcha context the doc would provide. Consider authoring one using the template at `template/ONBOARDING.md` in the skill repo."
+If none exist, tell the developer: "No ONBOARDING.md found. I can still answer questions from live source, but my answers will lack the rationale and gotcha context the doc would provide. Run the `onboard` skill (`/codebase-mentor:onboard` in a plugin install) to generate a draft from this repo's source, or author one by hand from the bundled template `ONBOARDING.template.md` located alongside this SKILL.md (under `${CLAUDE_PLUGIN_ROOT}/skills/codebase-mentor/` in a plugin install), with section-by-section guidance in `AUTHORING_GUIDE.md` next to it."
 
 Proceed in source-only mode: use **Read** and **Grep** to explore structure before answering, and rely on ONBOARDING.md guidance only when the file exists.
 
