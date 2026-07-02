@@ -33,7 +33,10 @@ REF="main"
 PROJECT=0
 AGENT="claude"
 SKILLS=(codebase-mentor onboard)
+# Referenced indirectly via files_var in install_skills.
+# shellcheck disable=SC2034
 FILES_codebase_mentor=(SKILL.md ONBOARDING.template.md AUTHORING_GUIDE.md)
+# shellcheck disable=SC2034
 FILES_onboard=(SKILL.md)
 
 while [[ $# -gt 0 ]]; do
