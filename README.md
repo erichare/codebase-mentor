@@ -33,6 +33,7 @@ No external services, no indexing, no new permissions — the skill uses Claude 
 
 **Other install paths:**
 
+- **Any agent (Cursor, Codex, Copilot, OpenCode, ~70 others)** — `npx skills add erichare/codebase-mentor`, or use the per-agent adapters: see [`docs/INSTALL.md`](docs/INSTALL.md).
 - **Whole team, zero-click** — commit a marketplace reference to your repo's `.claude/settings.json` so teammates are prompted automatically: see [`docs/TEAM_SETUP.md`](docs/TEAM_SETUP.md).
 - **No plugin support (IBM Bob, older Claude Code)** — `curl -fsSL https://raw.githubusercontent.com/erichare/codebase-mentor/main/install.sh | bash` installs the skills to `~/.claude/skills/` (add `--project` to vendor them into your repo instead).
 
