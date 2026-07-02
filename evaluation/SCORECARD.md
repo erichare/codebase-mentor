@@ -290,7 +290,7 @@ Raw responses captured per arm per task. Judges score from these.
 
 ### Arm 2 Raw Outputs (Bob + skill + live source, no ONBOARDING.md)
 
-> Captured: live session with `skill/SKILL.md` active, workspace = `data-api` source root. No `ONBOARDING.md` provided. *Outputs lightly normalized for symbol-name accuracy (state-machine names corrected to match source); content and scores unchanged.*
+> Captured: live session with `skills/codebase-mentor/SKILL.md` active, workspace = `data-api` source root. No `ONBOARDING.md` provided. *Outputs lightly normalized for symbol-name accuracy (state-machine names corrected to match source); content and scores unchanged.*
 
 **T1-A2:** *"I need to add a new sort type to the Data API. Where do I start?"*
 
@@ -324,7 +324,7 @@ Raw responses captured per arm per task. Judges score from these.
 
 ### Arm 3 Raw Outputs (Bob + skill + ONBOARDING.md)
 
-> Captured: live session with `skill/SKILL.md` active, workspace = `bob-challenge-2026`, `data-api/ONBOARDING.md` in scope, `data-api` source accessible. *Outputs lightly normalized for symbol-name accuracy; content and scores unchanged.*
+> Captured: live session with `skills/codebase-mentor/SKILL.md` active, workspace = `bob-challenge-2026`, `data-api/ONBOARDING.md` in scope, `data-api` source accessible. *Outputs lightly normalized for symbol-name accuracy; content and scores unchanged.*
 
 **T1-A3:** *"I need to add a new sort type to the Data API. Where do I start?"*
 
@@ -427,7 +427,7 @@ Scoring: each cell is a score from 1–5 on that criterion. Task average = mean 
 
 - Two senior Stargate Data API engineers available as independent judges
 - Bob session access
-- The codebase-mentor skill installed (see [`skill/SKILL.md`](../skill/SKILL.md))
+- The codebase-mentor skill installed (see [`skills/codebase-mentor/SKILL.md`](../skills/codebase-mentor/SKILL.md))
 - Local clone of `data-api` repo (or equivalent source access from within the session)
 - `data-api/ONBOARDING.md` committed and frozen before T4/T5 questions are selected
 
@@ -443,7 +443,7 @@ Scoring: each cell is a score from 1–5 on that criterion. Task average = mean 
 ### Running Arm 2 — Bob + Skill + Live Source (no ONBOARDING.md)
 
 1. Open a **fresh** Bob session.
-2. Activate the codebase-mentor skill (copy `skill/SKILL.md` to your skills directory if not already installed).
+2. Activate the codebase-mentor skill (copy `skills/codebase-mentor/SKILL.md` to your skills directory if not already installed).
 3. **Do not** provide `data-api/ONBOARDING.md` or mention that it exists.
 4. Ensure Bob has access to the `data-api` source (local repo path or equivalent).
 5. Ask the task question verbatim.

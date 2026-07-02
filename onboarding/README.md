@@ -44,6 +44,17 @@ rsync -av --update onboarding/astrapy/ONBOARDING.md ~/GitHub/astrapy/ONBOARDING.
 rsync -av --update onboarding/langflow/ONBOARDING.md ~/GitHub/langflow/ONBOARDING.md
 ```
 
+## Template sync (maintainers)
+
+The canonical template lives in [`../template/`](../template/). The plugin bundles copies at
+`skills/codebase-mentor/ONBOARDING.template.md` and `skills/codebase-mentor/AUTHORING_GUIDE.md`
+so installed users have them offline. After editing the template, refresh the bundled copies:
+
+```bash
+cp template/ONBOARDING.md skills/codebase-mentor/ONBOARDING.template.md
+cp template/AUTHORING_GUIDE.md skills/codebase-mentor/AUTHORING_GUIDE.md
+```
+
 ## Adding a new repo
 
 1. Create `onboarding/<repo-name>/`

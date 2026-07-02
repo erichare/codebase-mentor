@@ -4,7 +4,7 @@
 
 Build a reusable Bob skill called the **Source-Grounded Codebase Mentor** and demonstrate it on the Stargate Data API. The submission consists of five deliverables, all living in this repo:
 
-1. `skill/SKILL.md` — the installable Bob skill
+1. `skills/codebase-mentor/SKILL.md` — the installable Bob skill
 2. `template/ONBOARDING.md` + `template/AUTHORING_GUIDE.md` — the per-team authoring kit
 3. `data-api/ONBOARDING.md` — reference implementation for the Stargate Data API
 4. Freshness check mode — built into the skill itself
@@ -14,7 +14,7 @@ The approach: author the skill and template first (they are independent of any s
 
 ---
 
-## Sub-Task 1 — Skill Authoring (`skill/SKILL.md`)
+## Sub-Task 1 — Skill Authoring (`skills/codebase-mentor/SKILL.md`)
 
 **Status:** `[x] done`
 
@@ -22,7 +22,7 @@ The approach: author the skill and template first (they are independent of any s
 Write the Bob skill file that any IBM team installs once. It contains the reasoning strategy Bob follows when the skill is active: how to locate an ONBOARDING.md, how to trace a request path through live source, how to produce evidence-cited answers, how to perform reactive reconciliation (check one claim on demand), and how to perform the proactive freshness scan (compare the whole ONBOARDING.md against current source structure). The skill must also define the accuracy contract: every architecture or change-guidance claim backed by a symbol or file read in that session, or Bob says evidence is missing.
 
 ### Expected Outcomes
-- `skill/SKILL.md` exists and is complete
+- `skills/codebase-mentor/SKILL.md` exists and is complete
 - The skill has a clear frontmatter section (name, description, trigger conditions)
 - The skill describes four operating modes: **mentor** (answer architecture questions), **change-guide** (produce ordered checklists for a task), **reconcile** (check one claim against source), **scan** (proactive freshness check across the whole doc)
 - The accuracy contract is stated in the skill instructions, not just in the proposal
@@ -167,7 +167,7 @@ Replace the minimal README.md with a submission-quality README that serves as bo
 
 | File | Sub-Task | Status |
 |---|---|---|
-| `skill/SKILL.md` | 1 | `[x] done` |
+| `skills/codebase-mentor/SKILL.md` | 1 | `[x] done` |
 | `template/ONBOARDING.md` | 2 | `[x] done` |
 | `template/AUTHORING_GUIDE.md` | 2 | `[x] done` |
 | `data-api/ONBOARDING.md` | 3 | `[x] done` |
