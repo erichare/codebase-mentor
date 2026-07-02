@@ -1,10 +1,19 @@
-# Tag-driven releases: push a v* tag whose version matches plugin.json,
-# and this workflow publishes a GitHub Release with the matching CHANGELOG section.
+# Releases, two ways:
+#   1. Push a v* tag whose version matches plugin.json.
+#   2. Run this workflow manually (Actions tab) with the version input —
+#      it creates the tag and the GitHub Release in one step.
+# Either way the CHANGELOG section for that version becomes the release notes.
 name: Release
 
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (must match plugin.json), e.g. 1.1.0"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -15,25 +24,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify tag matches plugin.json version
+      - name: Determine version
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "TAG=v${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Verify version matches plugin.json
+        run: |
           PLUGIN_VERSION="$(jq -r .version .claude-plugin/plugin.json)"
-          if [ "$TAG_VERSION" != "$PLUGIN_VERSION" ]; then
-            echo "Tag v$TAG_VERSION does not match plugin.json version $PLUGIN_VERSION" >&2
+          if [ "$VERSION" != "$PLUGIN_VERSION" ]; then
+            echo "Release version $VERSION does not match plugin.json version $PLUGIN_VERSION" >&2
             exit 1
           fi
 
       - name: Extract CHANGELOG section
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          awk -v ver="$TAG_VERSION" '
+          awk -v ver="$VERSION" '
             $0 ~ "^## \\[" ver "\\]" {found=1; next}
             found && /^## \[/ {exit}
             found {print}
           ' CHANGELOG.md > release-notes.md
           if [ ! -s release-notes.md ]; then
-            echo "No CHANGELOG section found for $TAG_VERSION" >&2
+            echo "No CHANGELOG section found for $VERSION" >&2
             exit 1
           fi
           cat release-notes.md
@@ -42,6 +59,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            --title "codebase-mentor $GITHUB_REF_NAME" \
+          # On workflow_dispatch the tag does not exist yet; --target makes
+          # gh create it at the checked-out commit. On tag push the existing
+          # tag is used and --target is ignored.
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "codebase-mentor $TAG" \
             --notes-file release-notes.md
