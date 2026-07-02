@@ -1,0 +1,45 @@
+# Repo self-validation: manifests, generated-file drift, shell hygiene, links.
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Manifests parse
+        run: jq . .claude-plugin/plugin.json .claude-plugin/marketplace.json > /dev/null
+
+      - name: Generated files in sync
+        run: bash scripts/sync-adapters.sh --check
+
+      - name: Shellcheck
+        run: shellcheck install.sh scripts/*.sh
+
+      - name: Workflow YAML parses
+        run: |
+          python3 - <<'EOF'
+          import glob, yaml
+          for f in glob.glob(".github/workflows/*.yml") + glob.glob("examples/github-actions/*.yml"):
+              yaml.safe_load(open(f))
+              print(f"OK {f}")
+          EOF
+
+      - name: Claude plugin validate
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          claude plugin validate .
+
+      - name: Internal link check
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --offline --no-progress --include-fragments "**/*.md"
+          fail: true
