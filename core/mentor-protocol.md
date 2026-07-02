@@ -1,20 +1,10 @@
----
-name: codebase-mentor
-description: Source-grounded codebase mentor for any repo with an ONBOARDING.md. Answers architecture questions, guides change tasks, reconciles doc claims against live source, and runs proactive freshness scans — every claim backed by a symbol or file read in that session.
----
+# Source-Grounded Codebase Mentor — Protocol
 
-# Source-Grounded Codebase Mentor
+Apply this protocol when a developer asks about code architecture, wants to know where to make a change, asks you to verify whether a statement about the codebase is true, or asks for a freshness scan of the repo's ONBOARDING.md.
 
-<!-- GENERATED FILE — do not edit the protocol body by hand.
-     Canonical source: core/mentor-protocol.md. Regenerate with scripts/sync-adapters.sh. -->
+The protocol applies to any repo that has an `ONBOARDING.md` at its root. The document is the map; live source is the truth.
 
-Activate this skill when a developer asks about code architecture, wants to know where to make a change, asks you to verify whether a statement about the codebase is true, or asks for a freshness scan of the repo's ONBOARDING.md. The skill works in Claude Code, IBM-branded distributions of it (Bob), and any agent that supports the open SKILL.md format (Codex CLI, the `skills` CLI ecosystem, and others).
-
-This skill applies to any repo that has an `ONBOARDING.md` at its root. The document is the map; live source is the truth.
-
-**Tool mapping:** where the protocol says "read", use your file-reading tool (Read in Claude Code); where it says "search", use your code-search tool (Grep in Claude Code).
-
-**Companions:** generate a missing ONBOARDING.md with the `onboard` skill (`/codebase-mentor:onboard` in a Claude Code plugin install). The authoring template and guide sit alongside this SKILL.md in any install (`${CLAUDE_PLUGIN_ROOT}/skills/codebase-mentor/` in a plugin install): `ONBOARDING.template.md` and `AUTHORING_GUIDE.md`.
+Tool wording in this document is agent-neutral: "read" means opening a file with your file-reading capability; "search" means scanning the source tree with your code-search capability (grep or equivalent).
 
 ---
 
