@@ -1,0 +1,49 @@
+site_name: Codebase Mentor
+site_description: >-
+  Source-grounded codebase mentor for AI coding agents — every architecture
+  claim backed by a symbol read from current source.
+site_url: https://erichare.github.io/codebase-mentor/
+repo_url: https://github.com/erichare/codebase-mentor
+repo_name: erichare/codebase-mentor
+edit_uri: edit/main/site/docs/
+
+docs_dir: site/docs
+site_dir: .site-build
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.tabs.link
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Install: install.md
+  - Authoring an ONBOARDING.md: authoring.md
+  - Team rollout: team-setup.md
+  - CI freshness scanning: ci.md
+  - Evaluation & origin story: evaluation.md
+  - Examples: examples.md
